@@ -30,5 +30,4 @@ end
 prefactor       = 10^b;
 exponent        = a;
 
-
 end

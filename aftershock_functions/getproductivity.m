@@ -9,6 +9,12 @@ badInd = isnan(magnitude) | isnan(N) | N==0;
 magnitude = magnitude(~badInd);
 N         = N(~badInd);
 
+if strcmp(varargin,'threshold5')
+    goodInd     = N > 5;
+    magnitude   = magnitude(goodInd);
+    N           = N(goodInd); 
+end
+
 logN            = log10(N);
 
 numberOfKnots   = 3; % 2 ends on cusp
@@ -19,7 +25,8 @@ if strcmp(varargin,'peicewise')
     b               = b(2);
 elseif strcmp(varargin,'alpha1')
     a = 1;
-    b = mean(logN)-a*mean(magnitude);
+    b = mean(logN)-a*mean(magnitude);    
+
 else
     d               = polyfit(magnitude,logN,1);
     a               = d(1);

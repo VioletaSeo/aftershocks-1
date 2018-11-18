@@ -419,8 +419,6 @@ function    [mainShockIndex,numberOfAftershock, numberOfForeshocks] = ...
 % out{2}: number of aftershocks of the earthquakes
 % out{3}: number of foreshocks
 
-
-
 x=lat;
 y=lon;
 z=depth;
@@ -433,10 +431,11 @@ tsort=tsort(I);
 x   = x(I);
 y   = y(I);
 z   = z(I);
-fms = fms(I);
+%fms = fms(I);
 
-Dtfor=0;            % foreshock time window
-
+% convert coordinates into earth centric coordinate
+wgs84       = wgs84Ellipsoid('kilometer');
+[x,y,z]     = geodetic2ecef(wgs84,x,y,-z);
 
 %% 
 minmag=min(mag); 
@@ -465,53 +464,51 @@ for mm=maxmag:-0.1:minmag
     I1              = find(abs(mag-mm)<0.05);
     Nparfor         = length(I1);
     
+    mo          = (10^((mm+10.73)*1.5))*10^-7;
+    stressDrop  = 10^5*10;
+    sourceDim   = 2 * 0.001 * (mo*(7/16) / stressDrop) ^ (1/3); % in km tbl 9.1 modern global seismo lay
+    Dmaxbig     = DmaxScaling*sourceDim;
+    DistCutoff  = DScaling*sourceDim;
+    
+    Dt          = dt9*10^(mm-9);
+    DtFS        = foreshockTimeWin*10^(mm-9);
+    Dtbig       = dt9max*10^(mm-9); % scaled time window
+
+    
     if (Nparfor>0)
         for i =1:Nparfor
-            
-            t0    = tsort(I1(i));
-            lat0  = x(I1(i));
-            lon0  = y(I1(i));
-            z0    = z(I1(i));
-            
-            trel  = tsort-t0;
-            
-            D     =distance(x,y,lat0,lon0);
-            D     =sqrt(deg2km(D).^2 + (z-z0).^2);            
-            
-            % scales with source dimension:
-            mo          = (10^((mm+10.73)*1.5))*10^-7;
-            stressDrop  = 10^5*10;
-            sourceDim   = 2 * 0.001 * (mo*(7/16) / stressDrop) ^ (1/3); % in km tbl 9.1 modern global seismo lay
-            Dmaxbig     = DmaxScaling*sourceDim; 
-            DistCutoff  = DScaling*sourceDim;
-            
-            Dt          = dt9*10^(mm-9);
-            DtFS        = foreshockTimeWin*10^(mm-9);
-            Dtbig       = dt9max*10^(mm-9); % scaled time window
-
-            Itbig       = ((trel>-foreshockTimeWin)   &   (trel<Dtbig));
-                       
-            Idbig       = (abs(D)<Dmaxbig);
-            Ibig        = and(Itbig,Idbig);              
-    
             if (flag(I1(i))==0)
-                
-                IAS             = (trel>-DtFS)  &   (trel<Dt)   &   (D<DistCutoff);
 
-                    
+                t0    = tsort(I1(i));
+                x0  = x(I1(i));
+                y0  = y(I1(i));
+                z0  = z(I1(i));
+                
+                trel  = tsort-t0;
+
+                Dsquared = (x-x0).^2+(y-y0).^2+(z-z0).^2;
+                
+                Ibig  = ((trel>-foreshockTimeWin)   &   (trel<Dtbig)) ...
+                    & ...
+                    Dsquared < Dmaxbig^2;
+
+                IAS   = (trel>-DtFS)  &   (trel<Dt)   ...
+                    & ...
+                    Dsquared < DistCutoff^2;
+
                 IAS(I1(i))      = 0; % guard against including mainshock
                 NumMain         = NumMain+1;
                 
                 % record the index of the mainshock in the original input array
                 iMainShock                      = iMainShock + 1;
-                mainShockIndex(iMainShock)      = I(I1(i)); % (I is the hash map for sorting and I1(i) is the main shock index in the sorted list of eq) 
+                mainShockIndex(iMainShock)      = I(I1(i)); % (I is the hash map for sorting and I1(i) is the main shock index in the sorted list of eq)
                 numberOfAftershock(iMainShock)          = sum(trel(IAS)>0);
-                % numberOfAftershockInPlane(iMainShock)   = sum(trel(IAS)>0 & 
+                % numberOfAftershockInPlane(iMainShock)   = sum(trel(IAS)>0 &
                 numberOfForeshocks(iMainShock)          = sum(trel(IAS)<0);
             end
-                        
+            
             flag(Ibig)=1;
-        end        
+        end
     end    
 end
 
@@ -618,3 +615,7 @@ mth = 2.5;
 end
 
 end % obtain the completeness of the earthquake catalog
+function [Il]           = ind2logind(I,L)
+Il = zeros(1,L);
+Il(I) = 1;
+end

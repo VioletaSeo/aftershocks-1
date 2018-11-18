@@ -21,8 +21,7 @@ function aftershock_productivity_wrapper()
 
 % entire catalog 
 figure
-aftershock_productivity_kernel(...
-                               'DepthRange', [0,55]);
+aftershock_productivity_kernel('DepthRange', [0,55]);
 
 %% plot different focal mechanisms
 % 
@@ -50,7 +49,8 @@ aftershock_productivity_kernel(...
 % aftershock_productivity_kernel(...
 %     'DepthRange',           [0,maxDepth], ...
 %     'PLateBoundary',        'convergent', ...
-%     'PlateBoundaryDist',    plateBoundaryDist);% crustThickness = [0 25 300];
+%     'PlateBoundaryDist',    plateBoundaryDist);
+% crustThickness = [0 25 300];
 % maxDepth            = 80; % km
 % 
 % figure
@@ -93,7 +93,32 @@ aftershock_productivity_kernel(...
 %     aftershock_productivity_kernel('PlateBoundary','concat1.lon(Idx)vergent',        ...
 %                                    'FocalMechanism','reverse',          ...
 %                                    'PlateBoundaryDist',1000,             ...
-%                                    'DepthRange',[depth(n), depth(n+1)]  );
+%                        % resAllData  = allAS(MAG,NUMEQ);
+% resRange    = minmax(resAllData(~isnan(resAllData) & ~isinf(resAllData)));
+% 
+% binEdges    = linspace(resRange(1),resRange(2),10);
+% % binEdges    = logspace(log10(resRange(1)),log10(resRange(2)),10);
+% 
+% figure
+% histogram(resAllData,binEdges,'FaceColor', [0.8 0.8 0.8],'EdgeColor',[1 1 1])
+% hold on
+% 
+% faceColor = get(h,'CData');
+% for n = 1:length(xData)
+%     mag     = xData{n};
+%     numEq   = yData{n};
+%     res     = allAS(mag,numEq);  
+%     
+%     %offset = n*diff(binEdges(1:2))*0.2;
+%     offset = 0;
+%     histogram(res,binEdges+offset,'FaceColor',faceColor{n},'EdgeColor',[1 1 1])
+%     
+% end
+% 
+% xlabel('\Delta log N')
+% ylabel('Count')
+% 
+% title('Residual Analysis')            'DepthRange',[depth(n), depth(n+1)]  );
 % end  
 % title('Mean number of aftershocks as a function of Magnitude in zones A B and C');
     
@@ -190,7 +215,6 @@ aftershock_productivity_kernel(...
 % -> interpretation: the plate boundary environment has effectively no
 % influence on the productivity behavior of the 
 
-
  
 %% SENSITIVTY TESTS
 %% time selection window
@@ -221,7 +245,6 @@ aftershock_productivity_kernel(...
 % 
 % title('Sensitivity test: time search window')function    [p,notUsingDefault] = parse_input(input)
 
-load('mainshock_info.mat')
 
 %% shuffle times
 
@@ -497,17 +520,6 @@ function [varargout]    = goodind(goodInd,varargin)
 for n=1:length(varargin)
     varargout{n} = varargin{n}(goodInd);
 end
-
-end
-
-function worldmap_base
-
-figure
-hold on
-worldmap world
-load coastlines
-plotm(coastlat, coastlon)
-geoshow('landareas.shp', 'FaceColor', [0.9 0.9 0.9])
 
 end
 

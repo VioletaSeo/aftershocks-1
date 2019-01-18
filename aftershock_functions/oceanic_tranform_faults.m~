@@ -1,0 +1,60 @@
+
+inpStr = {'ForeshockTimeWindow', 10, 'DepthRange', [0,55]}; % default input
+glo_CAT = aftershock_productivity_GCMT_ISC(inpStr{:});
+otf_CAT = aftershock_productivity_GCMT_ISC(inpStr{:}, ...
+                        'PlateBoundaryClass',   'OTF');
+ctf_CAT = aftershock_productivity_GCMT_ISC(inpStr{:}, ...
+    'PlateBoundaryClass',   'CTF');
+
+%% 
+Mc      = 6.5;
+
+I       = otf_CAT.MSmag > Mc;
+gloMag  = otf_CAT.MSmag(I);
+gloProd = otf_CAT.MSprod_appended_cat1(I);
+gloRes  = otf_CAT.MSres_appended_cat1(I);
+
+ISS     = otf_CAT.MSfms == 1 & otf_CAT.MSmag > Mc;
+otfMag  = otf_CAT.MSmag(ISS);
+otfProd = otf_CAT.MSprod_appended_cat1(ISS);
+otfRes  = otf_CAT.MSres_appended_cat1(ISS);
+
+ISS     = ctf_CAT.MSfms == 1 & ctf_CAT.MSmag > Mc;
+ctfMag  = ctf_CAT.MSmag(ISS);
+ctfProd = ctf_CAT.MSprod_appended_cat1(ISS);
+ctfRes  = ctf_CAT.MSres_appended_cat1(ISS);
+
+%%
+
+figure; hold on;
+plotProd = @(mag,prod) scatter(mag,prod,'filled','MarkerFaceAlpha',0.5);
+
+plotProd(gloMag,gloProd);
+plotProd(otfMag,otfProd);
+plotProd(ctfMag,ctfProd);
+set(gca,'YScale','log')
+legend({'Global Catalog','Oceanic Transform Fault', 'Continental Transform Fault'});
+
+%%
+figure; hold on
+colors = {[     0    0.4470    0.7410],...
+          [0.6350    0.0780    0.1840],...
+          [     0    0         0     ]};
+sz     = 100;
+N = 1;
+scatter(otfRes,N*ones(size(otfRes)),sz,'filled','MarkerFaceAlpha',0.05,'MarkerFaceColor',colors{N})
+scatter(median(otfRes),N,sz,'filled','MarkerFaceColor',colors{N})
+plot(prctile(otfRes,[35,65]),[N,N],'LineWidth',2,'Color',colors{N})
+N = 2;
+scatter(ctfRes,N*ones(size(ctfRes)),sz,'filled','MarkerFaceAlpha',0.05,'MarkerFaceColor',colors{N})
+scatter(median(ctfRes),N,sz,'filled','MarkerFaceColor',colors{N})
+plot(prctile(ctfRes,[35,65]),[N,N],'LineWidth',2,'Color',colors{N})
+N = 3;
+scatter(gloRes,N*ones(size(gloRes)),sz,'filled','MarkerFaceAlpha',0.05,'MarkerFaceColor',colors{N})
+scatter(median(gloRes),N,sz,'filled','MarkerFaceColor',colors{N})
+plot(prctile(ctfRes,[35,65]),[N,N],'LineWidth',2,'Color',colors{N})
+
+set(gca,'YTick',[0,1,2],'YTickLabel',{' ','OTF','CTF'},'YLim',[0.1,2.1])
+xlabel('Residual productivity')
+set(findall(gcf,'-property','FontSize'),'FontSize',12)
+

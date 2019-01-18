@@ -9,6 +9,11 @@ badInd = isnan(magnitude) | isnan(N) | N==0;
 magnitude = magnitude(~badInd);
 N         = N(~badInd);
 
+if sum(~badInd)<=3
+   [prefactor,exponent] = deal(nan); 
+   return 
+end
+
 if strcmp(varargin,'threshold5')
     goodInd     = N > 5;
     magnitude   = magnitude(goodInd);

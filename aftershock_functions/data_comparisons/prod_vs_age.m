@@ -1,0 +1,65 @@
+tempCatFN= 'temp_earthquake_cat_merge.mat';
+minMag = 6;
+delete_temp         = @() system(sprintf('rm %s',tempCatFN));
+load('ISC_1976-2018.mat'); 
+aftershock_productivity_kernel( quakes.otime, ...
+            quakes.lat, ...
+            quakes.lon, ...
+            quakes.depth, ...
+            quakes.mag, ...
+            'SaveCatalog',tempCatFN, ...
+            'MinMainshockMag',minMag, ...
+            'DepthRange',[0,55], ...
+            'PlotYN', 'no');
+CAT = load(tempCatFN); delete_temp();
+load('age.3.6.xyz') 
+ageAry = age_3_6(~isnan(age_3_6(:,3)),:);
+wgs84 = wgs84Ellipsoid('kilometers'); 
+[Xa,Ya,Za] = geodetic2ecef(wgs84,ageAry(:,2),ageAry(:,1),zeros(length(ageAry),1));
+[Xe,Ye,Ze] = geodetic2ecef(wgs84,CAT.MSlat,CAT.MSlon,-CAT.MSdepth);
+age = ageAry(:,3);
+
+
+
+%%
+nMS = length(CAT.MSt);
+MSage = zeros(nMS,1);
+Dcutoff = 30; %km
+
+for n = 1:nMS
+    D = sqrt((Xe(n)-Xa).^2 + (Ye(n)-Ya).^2 + (Ze(n)-Za).^2);
+    minD = min(D);
+    if minD < (Dcutoff)
+        I = D == minD;
+        MSage(n) = min(age(I));
+    else
+        MSage(n) = nan;
+    end
+end
+
+%%
+
+figure
+scatter(MSage,CAT.MSres,25,'filled','MarkerFaceAlpha',0.15);
+xlabel('Sea floor age')
+ylabel('Relative Productivity')
+hold on
+[Mage,Mres,Merr] = mov_mean(MSage,CAT.MSres,150,10);
+plot(Mage,Mres,'LineWidth',3,'Color',[1 0 0 0.5])
+plot(Mage,Merr(:,1),'--','LineWidth',1,'Color',[1 0 0 0.5])
+plot(Mage,Merr(:,2),'--','LineWidth',1,'Color',[1 0 0 0.5])
+grid on
+
+
+%%
+figure
+scatter(sqrt(MSage),CAT.MSres,30,'filled','MarkerFaceAlpha',0.1);
+xlabel('\sqrt{Sea floor age}')
+ylabel('Relative Productivity')
+hold on
+[sqrtMage,Mres,Merr] = mov_mean(sqrt(MSage),CAT.MSres,200,sqrt(15));
+plot(sqrtMage,Mres,'LineWidth',3,'Color',[1 0 0 0.5] )
+plot(sqrtMage,Merr(:,1),'--','LineWidth',1,'Color',[1 0 0 0.5])
+plot(sqrtMage,Merr(:,2),'--','LineWidth',1,'Color',[1 0 0 0.5])
+grid on
+

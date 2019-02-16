@@ -2,10 +2,13 @@
 load('ISC-gCTM_mainshock_catalog.mat')
     MSformat = {'MSt','MSlat','MSlon','MSmag'};
 load('EQ_Energy_cat.mat');                  
-    REformat        = {'t','lat','lon','mag'};
+    REformat        = {'t','lat','lon','mag'};    
+load('agu_2018_source_attribute_data.mat');
+
 [mergedCat,~] = merge_eq_catalog(CAT,MSformat, ...
                                  cat, REformat);
 X = mergedCat.MeBB_appended_cat1./mergedCat.mag_appended_cat1;
+
                                                     
 % X = [log10(mergedCat.EBB_appended_cat1), ...
 %      log10(mergedCat.EHF_appended_cat1), ...
@@ -53,6 +56,16 @@ X = CAT.MSdepth;
 Y = CAT.MSres_appended_cat1;
 SourceParameters = {'depth'};
 r2stem(X,Y,SourceParameters,10000);
+
+
+%% 
+load('EQ_Energy_cat.mat');                  
+    REformat        = {'t','lat','lon','mag'};    
+load('agu_2018_source_attribute_data.mat');
+c = aguCAT;
+    SDformat        = {'Time','Lat','Lon','Mw'};
+
+[mergedCat,~] = merge_eq_catalog(c, SDformat,cat, REformat);
 
 %% Where shit gets done ...
 function [Rvalues] = r2stem(X,Y,SourceParameters,mit)    

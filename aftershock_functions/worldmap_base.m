@@ -2,7 +2,7 @@ function worldmap_base
 
 figure
 hold on
-worldmap('world')
+worldmap({'World'})
 load coastlines
 %plotm(coastlat, coastlon)
 geoshow('landareas.shp', 'FaceColor', [0.9 0.9 0.9])

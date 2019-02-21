@@ -15,7 +15,7 @@ yq      = zeros(N,1);
 yerr    = zeros(N,2);
 for n = 1:N
     I = x>(xq(n)-r) & x<(xq(n)+r);
-    if sum(I) > 5
+    if sum(I) > 3
         yq(n)   = median(y(I));
         yerr(n,:) = prctile(y(I),[25,75]);
     else

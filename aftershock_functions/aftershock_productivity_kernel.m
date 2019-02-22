@@ -40,7 +40,8 @@ I = subsample_catalog(t,lat,lon,depth,M,fms,parse_input({})); % completeness
 t = redefine_time(t,p);
 
 %% analyse data
-[mainshockIndex,numberOfAftershocks,numberOfForeshocks] = get_aftershock_count(t,lat,lon,depth,M,fms,p); % input must be passed up
+[mainshockIndex,numberOfAftershocks,numberOfForeshocks] = ...
+    get_aftershock_count(t,lat,lon,depth,M,fms,p); % input must be passed up
 
 %% subsample data
 [MSt,MSlat,MSlon,MSdepth,MSmag,MSfms] = goodind(mainshockIndex,t',lat',lon',depth',M',fms');
@@ -51,8 +52,7 @@ I       = subsample_catalog(MSt',MSlat',MSlon',MSdepth',MSmag',MSfms',p);
 [MAG,MAGCOUNT,prefactor,alpha]          = productivity_law(MSmag,MSprod); % aftershock
 
 %% get residual productivity
-[MSres]     = getMSres(MSmag,MSprod,prefactor,alpha); %#ok<NASGU>
-
+[MSres]     = getMSres(MSmag,MSprod,prefactor,alpha);
 %% output
 plot_output(MAG,MAGCOUNT,prefactor,alpha,p,notUsingDefault);   
 varargout   = create_output(prefactor,alpha,p, notUsingDefault, MSmag, FSprod,M,MAG,MAGCOUNT);

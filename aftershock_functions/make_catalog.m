@@ -1,6 +1,5 @@
 
 function [CAT, varargout] = make_catalog(NEWCATALOGNAME)
-
 figure
 [MSprefactor,MSalpha] = aftershock_productivity_kernel('/auto/home/kdascher/Documents/UCSC/general_data/Earthquake_data/NCEDC/NCEDC_CAT.mat','DepthRange', [0,55]);
 

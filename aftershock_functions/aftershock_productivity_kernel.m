@@ -58,7 +58,7 @@ plot_output(MAG,MAGCOUNT,prefactor,alpha,p,notUsingDefault);
 varargout   = create_output(prefactor,alpha,p, notUsingDefault, MSmag, FSprod,M,MAG,MAGCOUNT);
 if ~strcmp(p.Results.SaveCatalog,   'no'); save(p.Results.SaveCatalog,'MSt','MSlat','MSlon','MSdepth','MSmag','MSfms','MSprod','MSres','FSprod'); end
 if ~strcmp(p.Results.ReturnCatalog, 'no')
-    CAT = table(MSt,MSlat,MSlon,MSdepth,MSmag,MSfms,MSprod,FSprod);
+    CAT = table(MSt,MSlat,MSlon,MSdepth,MSmag,MSfms,MSprod,MSres,FSprod);
     varargout = {CAT,varargout{:}};    %#ok<CCAT>
 end
 %% nested functions

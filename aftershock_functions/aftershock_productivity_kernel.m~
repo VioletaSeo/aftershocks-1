@@ -47,7 +47,7 @@ t = redefine_time(t,p);
 %% subsample data
 [ID,MSt,MSlat,MSlon,MSdepth,MSmag,MSfms] = goodind(mainshockIndex,ID,t',lat',lon',depth',M',fms');
 I       = subsample_catalog(MSt',MSlat',MSlon',MSdepth',MSmag',MSfms',p);
-[ID,MSt,MSlat,MSlon,MSdepth,MSmag,MSfms,MSprod,FSprod] = goodind(I,ID,MSt,MSlat,MSlon,MSdepth,MSmag,MSfms, numberOfAftershocks',numberOfForeshocks'); %#ok<ASGLU>
+[MSt,MSlat,MSlon,MSdepth,MSmag,MSfms,MSprod,FSprod] = goodind(I,IDMSt,MSlat,MSlon,MSdepth,MSmag,MSfms, numberOfAftershocks',numberOfForeshocks'); %#ok<ASGLU>
 
 %% get productivity law
 [MAG,MAGCOUNT,prefactor,alpha]          = productivity_law(MSmag,MSprod); % aftershock
@@ -59,7 +59,7 @@ plot_output(MAG,MAGCOUNT,prefactor,alpha,p,notUsingDefault);
 varargout   = create_output(prefactor,alpha,p, notUsingDefault, MSmag, FSprod,M,MAG,MAGCOUNT);
 if ~strcmp(p.Results.SaveCatalog,   'no'); save(p.Results.SaveCatalog,'MSt','MSlat','MSlon','MSdepth','MSmag','MSfms','MSprod','MSres','FSprod'); end
 if ~strcmp(p.Results.ReturnCatalog, 'no')
-    CAT = table(ID,MSt,MSlat,MSlon,MSdepth,MSmag,MSfms,MSprod,MSres,FSprod);
+    CAT = table(MSt,MSlat,MSlon,MSdepth,MSmag,MSfms,MSprod,MSres,FSprod);
     varargout = {CAT,varargout{:}};    %#ok<CCAT>
 end
 %% nested functions

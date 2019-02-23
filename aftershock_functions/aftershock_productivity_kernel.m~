@@ -57,9 +57,9 @@ I       = subsample_catalog(MSt',MSlat',MSlon',MSdepth',MSmag',MSfms',p);
 plot_output(MAG,MAGCOUNT,prefactor,alpha,p,notUsingDefault);   
 varargout   = create_output(prefactor,alpha,p, notUsingDefault, MSmag, FSprod,M,MAG,MAGCOUNT);
 if ~strcmp(p.Results.SaveCatalog,   'no'); save(p.Results.SaveCatalog,'MSt','MSlat','MSlon','MSdepth','MSmag','MSfms','MSprod','MSres','FSprod'); end
-if ~strcmp(p.Results.ReturnCatalog, 'no')
+if ~strcmp(p.Results.returnCatalog, 'no')
     CAT = table(MSt,MSlat,MSlon,MSdepth,MSmag,MSfms,MSprod,FSprod);
-    varargout = {CAT,varargout{:}};    %#ok<CCAT>
+    varargout = {CAT,varargout{:)};   
 end
 %% nested functions
 function    [p,notUsingDefault] = parse_input(input)
@@ -117,7 +117,6 @@ defaultMinMainshockMag      = 'min';   % minimum magnitude of mainshovk to analy
 % 3) options
 
 defaultSaveData         = 'mainshock_info.mat'; % alternatively an actual file name
-defaultReturnCatalog    = 'no';
 
 % 4) plotting output
 defaultPlotYN           = 'yes';        % plot a figure of the output
@@ -163,7 +162,6 @@ addParameter(p,'PlateBoundaryDist', defaultPlateBoundaryDist,   numericValidatio
 addParameter(p,'PlateBoundaryClass',defaultPlateBoundaryClass,  @(x) stringValidationFcn(x,expectedPBClass));
 
 addParameter(p,'SaveCatalog',       defaultSaveData)
-addParameter(p,'ReturnCatalog',     defaultReturnCatalog)
 
 addParameter(p,'TimeWindow',        defaultTimeWindow,          numericValidationFcn);
 addParameter(p,'TimeSelectionWindow',defaultTimeSelectionWindow,numericValidationFcn);
@@ -178,8 +176,6 @@ addParameter(p,'ShowHistogram',     defaultShowHistogramYN,	@(x) stringValidatio
 addParameter(p,'SaveFigureYN',    	defaultSaveFigureYN,    @(x) stringValidationFcn(x,expectedYN));
 addParameter(p,'PrintFigureYN',     defaultPrintFigureYN,   @(x) stringValidationFcn(x,expectedYN));
 addParameter(p,'ShowOverviewYN',    defaultShowOverviewYN,  @(x) stringValidationFcn(x,expectedYN));
-addParameter(p,'ReturnCatalog',     defaultReturnCatalog,   @(x) stringValidationFcn(x,expectedYN));
-
 
 addParameter(p,'ShuffleYN',         defaultShuffleYN,       @(x) stringValidationFcn(x,expectedYN));
 addParameter(p,'SyntheticTimeYN',   defaultSyntheticTimeYN, @(x) stringValidationFcn(x,expectedYN));

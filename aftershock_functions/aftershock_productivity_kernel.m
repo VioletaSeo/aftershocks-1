@@ -117,7 +117,7 @@ defaultMinMainshockMag      = 'min';   % minimum magnitude of mainshovk to analy
 % 3) options
 
 defaultSaveData         = 'mainshock_info.mat'; % alternatively an actual file name
-defaultReturnCatalog    = 'no';
+defaultReturnCatalog  = 'no';
 
 % 4) plotting output
 defaultPlotYN           = 'yes';        % plot a figure of the output
@@ -163,7 +163,6 @@ addParameter(p,'PlateBoundaryDist', defaultPlateBoundaryDist,   numericValidatio
 addParameter(p,'PlateBoundaryClass',defaultPlateBoundaryClass,  @(x) stringValidationFcn(x,expectedPBClass));
 
 addParameter(p,'SaveCatalog',       defaultSaveData)
-addParameter(p,'ReturnCatalog',     defaultReturnCatalog)
 
 addParameter(p,'TimeWindow',        defaultTimeWindow,          numericValidationFcn);
 addParameter(p,'TimeSelectionWindow',defaultTimeSelectionWindow,numericValidationFcn);

@@ -28,7 +28,7 @@ function varargout = aftershock_productivity_kernel(varargin)
 
 %% get data
 [t,lat,lon,depth,M,fms,userSpec]= get_data(varargin);
-ID = 1:length(t);
+ID = (1:length(t))';
 
 %% parse input specifications
 [p,notUsingDefault] = parse_input(userSpec);
@@ -59,7 +59,8 @@ plot_output(MAG,MAGCOUNT,prefactor,alpha,p,notUsingDefault);
 varargout   = create_output(prefactor,alpha,p, notUsingDefault, MSmag, FSprod,M,MAG,MAGCOUNT);
 if ~strcmp(p.Results.SaveCatalog,   'no'); save(p.Results.SaveCatalog,'MSt','MSlat','MSlon','MSdepth','MSmag','MSfms','MSprod','MSres','FSprod'); end
 if ~strcmp(p.Results.ReturnCatalog, 'no')
-    CAT = table(ID,MSt,MSlat,MSlon,MSdepth,MSmag,MSfms,MSprod,MSres,FSprod);
+    CAT = table(ID,MSprod,MSres,FSprod);
+    CAT.Properties.UserData = p; % append the run information for reference
     varargout = {CAT,varargout{:}};    %#ok<CCAT>
 end
 %% nested functions

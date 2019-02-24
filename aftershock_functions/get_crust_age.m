@@ -1,7 +1,7 @@
 function CRUSTAGE = get_crust_age(lat,lon,depth)
 
 
-load('age.3.6.xyz'); 
+load('age.mat'); 
 ageAry = age_3_6(~isnan(age_3_6(:,3)),:);
 wgs84 = wgs84Ellipsoid('kilometers'); 
 [Xa,Ya,Za] = geodetic2ecef(wgs84,ageAry(:,2),ageAry(:,1),zeros(length(ageAry),1));

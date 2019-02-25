@@ -303,7 +303,6 @@ classdef fsp_inversion < handle
            Lat              = FSP.Location.LAT;
            Lon              = FSP.Location.LON;
            Depth            = FSP.Location.DEP;
-           FocalMechanism   = string(FSP.Mechanism.FocalMechanism);
            Mw               = FSP.Size.Mw;
            Mo               = FSP.Size.Mo;
            Width            = FSP.RuptureDimensions.Width;
@@ -320,7 +319,7 @@ classdef fsp_inversion < handle
            Poisson= FSP.ElasticProperties.Poisson;
            
            
-           out  = table(Time,Lat,Lon,Depth,Mw,Mo,FocalMechanism,Width, ...
+           out  = table(Time,Lat,Lon,Depth,Mw,Mo,Width, ...
                         Length,AspectRatio,Strike,Dip, ...
                         Rake,RuptureVelocity, RuptureTime, ...
                         StressDrop, Heterogeneity, Young, Poisson);           

@@ -71,7 +71,7 @@ for n = 1:numIn
     
     % standardized eucledian search of nearest neighbour
     [Idx,eDistance] = knnsearch(p0,pN,'Distance','seuclidean',...
-        'Scale',[std(p0(:,1))/4,std(p0(:,2:end-1))/4,max(p0(:,end))]);
+        'Scale',[std(p0(:,1:2)),max(p0(:,3))]);
     
     % deal with exceptions: - this gets ugly
         % find indexes that are assigned twice
@@ -86,36 +86,12 @@ for n = 1:numIn
         end
         
         % deal with clear outliers
-        outliers = eDistance > 2*geomean(eDistance(~exception));
+        outliers = eDistance > 3*geomean(eDistance(~exception));
         outliers = outliers | any(abs(p0(Idx,:)-pN) > repmat(th,nPoints,1),2);
-        
-%         % show what earthquakes couldnt be matched
-%         if any(exception)
-%             disp(sprintf('The following %g earthquakes could not be merged:', ...
-%                 sum(exception)));
-%             for iInd = 1:nPoints
-%                 if exception(iInd)
-%                     disp(sprintf('Time: %g       Lat: %g     Lon: %g     Depth: %g      Mag: %g', ...
-%                         catN.(catFormat{1})(iInd), ...
-%                         catN.(catFormat{2})(iInd), ...
-%                         catN.(catFormat{3})(iInd), ...
-%                         catN.(catFormat{4})(iInd), ...
-%                         catN.(catFormat{5})(iInd)))
-%                       % part of the debuggin
-% %                       scatterm(catN.(catFormat{2})(iInd), ...
-% %                        catN.(catFormat{3})(iInd),'r.')
-%                 end
-%             end           
-%         end
-
+       
         % discard the earthquakes that don't fit
         goodEq = ~(exception' | outliers);
         Idx = Idx(goodEq);
-        
-        % look at whether the bad earthquakes can be attributed to another
-        % earthquake
-    
-        % append data (notation indicates the originalname_appended_cat#)
     
     fieldName = catN.Properties.VariableNames;
     for k = 1:width(catN)

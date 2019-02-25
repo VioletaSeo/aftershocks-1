@@ -127,7 +127,10 @@ xlabel('Scaled Energy (E_{BB}/Mo)')
 ylabel('Relative productivity (N^*)')
 set(gca,'Xscale','log');
 ftsz(gcf,16)
-%% 
+
+%% FINITE FAULT INVERSIONS ANALYSIS
+%% ML? 
+
 
 %% 
 

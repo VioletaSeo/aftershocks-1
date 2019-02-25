@@ -108,9 +108,9 @@ expectedPBClass             = {'all','OSR','OTF','OCB','CRB','CTF','CCB','SUB'};
 % subduction zone
 
 % 2) analysis
-defaultTimeWindow           = 100;      % days 
-defaultTimeSelectionWindow  = 60;      % days
-defaultForeshockTimeWindow  = 1;
+defaultTimeWindow           = 900;      % days (for mag 9 event)
+defaultTimeSelectionWindow  = 900;      % days (for mag 9 event)
+defaultForeshockTimeWindow  = 0;
 defaultSearchRadius         = 5;        % times source dimensions
 defaultSelectionRadius      = 4;        % times source dimensions
 defaultMinMainshockMag      = 'min';   % minimum magnitude of mainshovk to analyse
@@ -531,11 +531,17 @@ numberOfAftershock  = zeros(1,length(tsort));
 numberOfForeshocks  = zeros(1,length(tsort));
 iMainShock = 0;
 
-Dt              = userInput.Results.TimeSelectionWindow; % time window in days 
-DtFS            = userInput.Results.ForeshockTimeWindow;
-Dtbig           = userInput.Results.TimeWindow;          % this is the time search window (eq flagged);
+
+dt9max          = userInput.Results.TimeWindow;          % this is the time search window (eq flagged);
+dt9             = userInput.Results.TimeSelectionWindow; % time window in days
+
+Dt          = 60;   
+DtFS        = 1;
+Dtbig       = 100; 
+
 DmaxScaling     = userInput.Results.SearchRadius;        % factor of source dimension
 DScaling        = userInput.Results.SelectionRadius;     % factor of source dimension
+foreshockTimeWin= userInput.Results.ForeshockTimeWindow; % time window for aftershocks
 
 % iterate from largest magnitude down in a hiearchical way
 for mm=maxmag:-0.1:minmag
@@ -565,7 +571,7 @@ for mm=maxmag:-0.1:minmag
 
                 Dsquared = (x-x0).^2+(y-y0).^2+(z-z0).^2;
                 
-                Ibig  = ((trel>-DtFS)   &   (trel<Dtbig)) ...
+                Ibig  = ((trel>-foreshockTimeWin)   &   (trel<Dtbig)) ...
                     & ...
                     Dsquared < Dmaxbig^2;
 
@@ -583,7 +589,6 @@ for mm=maxmag:-0.1:minmag
                 numberOfAftershock(iMainShock)  = sum(eqSeqt > 0);
                 numberOfForeshocks(iMainShock)  = length(eqSeqt) - numberOfAftershock(iMainShock);
                 flag = flag|Ibig;
-                
             end
         end
     end    

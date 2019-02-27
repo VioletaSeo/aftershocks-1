@@ -111,7 +111,7 @@ for n = 1:nT
 
         SENScat = CAT(ASinfoSENS.ID,:);
         scatter(SENScat.M,ASinfoSENS.MSprod,'Filled','MarkerFaceAlpha',0.4); hold on
-        plot(SENScat.M,kSENS*10.^(alphaSENS*SENScat.M));
+        p1 = plot(SENScat.M,kSENS*10.^(alphaSENS*SENScat.M));
        
         [ASinfoSENS,kSFL,alphaSFL] = aftershock_productivity_kernel(...
             CAT.time, ...
@@ -133,21 +133,21 @@ for n = 1:nT
             'ShuffleYN','yes');
         SENScat = CAT(ASinfoSENS.ID,:);
         scatter(SENScat.M,ASinfoSENS.MSprod,'Filled','MarkerFaceAlpha',0.4,'MarkerFaceColor',[.4 .4 .4]);
-        plot(SENScat.M,kSFL*10.^(alphaSFL*SENScat.M),'k' );
+        p2 = plot(SENScat.M,kSFL*10.^(alphaSFL*SENScat.M),'k' );
         
-        legend({'Catalog',sprintf('N = %0.1g 10^{%0.1g M_w}',kSENS, alphaSENS) ...
-                'Shuffled Catalog',sprintf('N = %0.1g 10^{%0.1g M_w}',kSFL, alphaSFL)}, ...
-                'Location','northwest')
+        legend([p1,p2],{sprintf('N=%0.1g10^{%0.1g M_w}',kSENS, alphaSENS) ...
+                sprintf('N_{SFL}=%0.1g10^{%0.1g M_w}',kSFL, alphaSFL)}, ...
+                'Location','southeast')
         
         title(['T = ',num2str(timeSelAry(n)), ' days, R = ',num2str(distSelAry(m)), ' R_{source}'])
         set(gca,'YScale','log')
-        set(gca,'YLim',[0.8,10000])
+        set(gca,'YLim',[0.1,10000])
         
     end
 end
 
 setsize(gcf,9,6)
-ftsz(gcf,8)
+ftsz(gcf,6)
 savefigure(gcf,'space_time_sensitivity',SAVEFIG)
 
 end
@@ -235,6 +235,20 @@ ftsz(gcf,12);
 setsize(gcf,5,3);
 savefigure(gcf,'prod_vs_depth',SAVEFIG)
 
+%% NearSS
+nearSSpairs;
+ftsz(gcf,12);
+setsize(gcf,3.8,1.7);
+%%
+savefigure(gcf,'nearSS',SAVEFIG);
+
+%% plate boundary
+plate_boundaries
+ftsz(gcf,12);
+setsize(gcf,2.5,1.8);
+%%
+savefigure(gcf,'prod_by_plate_boundary',SAVEFIG);
+
 %% prod vs age
 figure;
 yyaxis right
@@ -260,6 +274,9 @@ setsize(gcf,5,3);
 savefigure(gcf,'prod_vs_age',SAVEFIG)
 
 
+
+
+%% SOURCE ATTRIBUTES
 %% prod vs enery
 figure
 subplot(1,2,1)

@@ -33,9 +33,9 @@ ID = (1:length(t))';
 %% parse input specifications
 [p,notUsingDefault] = parse_input(userSpec);
 
-%% initial subsample data
-I = subsample_catalog(t,lat,lon,depth,M,fms,parse_input({})); % completeness
-[ID,t,lat,lon,depth,M,fms] = goodind(I,ID,t,lat,lon,depth,M,fms);
+%% remove earthquakes below completeness
+if strcmp(p.Results.Completeness,'MaxMag'); Mc = (calc_McMaxCurvature(M)+0.3); else; Mc = p.Results.Completeness; end 
+[ID,t,lat,lon,depth,M,fms] = goodind(M>=Mc,ID,t,lat,lon,depth,M,fms);
 
 %% shuffle/synthetic time (probably not doing anthing unless specified)
 t = redefine_time(t,p);
@@ -47,7 +47,7 @@ t = redefine_time(t,p);
 %% subsample data
 [ID,MSt,MSlat,MSlon,MSdepth,MSmag,MSfms] = goodind(mainshockIndex,ID,t',lat',lon',depth',M',fms');
 I       = subsample_catalog(MSt',MSlat',MSlon',MSdepth',MSmag',MSfms',p);
-[ID,MSt,MSlat,MSlon,MSdepth,MSmag,MSfms,MSprod,FSprod] = goodind(I,ID,MSt,MSlat,MSlon,MSdepth,MSmag,MSfms, numberOfAftershocks',numberOfForeshocks'); %#ok<ASGLU>
+[ID,MSt,MSlat,MSlon,MSdepth,MSmag,MSfms,MSprod,FSprod] = goodind(I,ID,MSt,MSlat,MSlon,MSdepth,MSmag,MSfms, numberOfAftershocks',numberOfForeshocks');
 
 %% get productivity law
 [MAG,MAGCOUNT,prefactor,alpha]          = productivity_law(MSmag,MSprod); % aftershock
@@ -92,10 +92,10 @@ defaultLatRange         	= minmax(lat);  % everything
 defaultLonRange             = minmax(lon);  % everything
 defaultTimeRange            = minmax(t);    % everything
 defaultDepthRange           = minmax(depth);% everything
-defaultCrustThicknessRange  = [0, 500];  % conservative bounds
-defaultMagRange             = 'completeness';% completeness of the catalog
+defaultCrustThicknessRange  = [0, 500];     % conservative bounds
 defaultFocalMechanism       = 'all';        % everything  (options below)
 expectedFocalMechanism      = {'all','normal','reverse','strike slip'};
+defaultCompleteness         = 'MaxMag';
 
 defaultPlateBoundary        = 'all';        % everything  (options below)
 expectedPlateBoundary       = {'all','plate boundaries','divergent','convergent','transform','none'};
@@ -111,8 +111,8 @@ expectedPBClass             = {'all','OSR','OTF','OCB','CRB','CTF','CCB','SUB'};
 defaultTimeWindow           = 100;      % days 
 defaultTimeSelectionWindow  = 60;      % days
 defaultForeshockTimeWindow  = 1;
-defaultSearchRadius         = 5;        % times source dimensions
-defaultSelectionRadius      = 4;        % times source dimensions
+defaultSearchRadius         = 4;        % times source dimensions
+defaultSelectionRadius      = 3;        % times source dimensions
 defaultMinMainshockMag      = 'min';   % minimum magnitude of mainshovk to analyse
 
 
@@ -156,13 +156,13 @@ stringValidationFcn     = @(x,y) assert(any(strcmp(x,y)),stringErrorMessage(y));
 addParameter(p,'LatRange',          defaultLatRange,    numeric2ValidationFcn);
 addParameter(p,'LonRange',          defaultLonRange,    numeric2ValidationFcn);
 addParameter(p,'timeRange',         defaultTimeRange,   numeric2ValidationFcn);
-addParameter(p,'MagRange',          defaultMagRange,    numeric2ValidationFcn);
 addParameter(p,'DepthRange',        defaultDepthRange,  numeric2ValidationFcn);
 addParameter(p,'CrustThicknessRange',defaultCrustThicknessRange,numeric2ValidationFcn);
 addParameter(p,'FocalMechanism',    defaultFocalMechanism,      @(x) stringValidationFcn(x,expectedFocalMechanism));
 addParameter(p,'PlateBoundary',     defaultPlateBoundary,       @(x) stringValidationFcn(x,expectedPlateBoundary)); 
 addParameter(p,'PlateBoundaryDist', defaultPlateBoundaryDist,   numericValidationFcn);
 addParameter(p,'PlateBoundaryClass',defaultPlateBoundaryClass,  @(x) stringValidationFcn(x,expectedPBClass));
+addParameter(p,'Completeness',      defaultCompleteness,   numericValidationFcn);
 
 addParameter(p,'SaveCatalog',       defaultSaveData)
 
@@ -331,13 +331,7 @@ function  	I                                   = subsample_catalog(t,lat,lon,dep
                     t   < subsample.timeRange(2)    ;...
                     depth>subsample.DepthRange(1)   ;...
                     depth<subsample.DepthRange(2)   ];
-    % completeness
-    if strcmp(subsample.MagRange, 'completeness')
-        Icomplete   = M >= get_completeness(M);
-    else 
-        Icomplete   = [M > subsample.MagRange(1)    ;...
-                       M < subsample.MagRange(2)];
-    end
+    
     
     % focal mechanism
     if ~strcmp(subsample.FocalMechanism,'all')
@@ -366,7 +360,6 @@ function  	I                                   = subsample_catalog(t,lat,lon,dep
                   
     % collapse all indices:
     Iaggregate = [ ISTM             ;...
-                   Icomplete        ;...
                    Ifms             ;...
                    IplateBoundary   ;...
                    IPBclass         ;...
@@ -379,7 +372,7 @@ function  	I                                   = subsample_catalog(t,lat,lon,dep
         catalog_overview(t,lat,lon,depth,M);
     end             
      
-    function ind = get_PB_eq(lat, lon, criticalDistance, plateBoudaryType)
+    function ind    = get_PB_eq(lat, lon, criticalDistance, plateBoudaryType)
         %  load file with the plate boundary information - right now
         %  this is just the surface expression of plate boundaries,
         %  still (could still be intraplate)
@@ -426,7 +419,7 @@ function  	I                                   = subsample_catalog(t,lat,lon,dep
             ind = ~ind;
         end
     end
-    function ind = get_PB_class(lat, lon, criticalDistance, plateBoudaryClass)
+    function ind    = get_PB_class(lat, lon, criticalDistance, plateBoudaryClass)
         fn      = 'PB2002_steps.dat';
         fileID  = fopen(fn);
         C       = textscan(fileID,'%f %s %f %f %f %f %f %f %f %f %f %f %f %f %s');
@@ -446,7 +439,7 @@ function  	I                                   = subsample_catalog(t,lat,lon,dep
         
         ind     = get_dist(lat,lon,latPB,lonPB) < criticalDistance;
     end
-    function DISTS = get_dist(lat1, lon1, lat2, lon2)
+    function DISTS  = get_dist(lat1, lon1, lat2, lon2)
         
         num1 = length(lat1);
         num2 = length(lat2);
@@ -463,7 +456,7 @@ function  	I                                   = subsample_catalog(t,lat,lon,dep
         % convert to metric distances
         DISTS = deg2km(dists);
     end
-    function ind = get_fms(fms,fmsChoice)
+    function ind    = get_fms(fms,fmsChoice)
         if      strcmp(fmsChoice,'strike slip');        fmsChoice = 1;
         elseif  strcmp(fmsChoice,'normal');             fmsChoice = 2;
         elseif  strcmp(fmsChoice,'reverse');            fmsChoice = 3;
@@ -545,9 +538,10 @@ for mm=maxmag:-0.1:minmag
     I1       	= find(abs(mag-mm)<0.05);
     Nparfor    	= length(I1);
     
-    mo          = (10^((mm+10.73)*1.5))*10^-7;
-    stressDrop  = 10^5*10;
-    sourceDim   = 2 * 0.001 * (mo*(7/16) / stressDrop) ^ (1/3); % in km tbl 9.1 modern global seismo lay
+%     mo          = (10^((mm+10.73)*1.5))*10^-7;
+%     stressDrop  = 10^5*10;
+%     sourceDim   = 2 * 0.001 * (mo*(7/16) / stressDrop) ^ (1/3) % in km tbl 9.1 modern global seismo lay
+    sourceDim   = 2*10^(0.59*mm)/10^3; % wells and coppesmith 1994 (M6 ~ 20km, M9 ~ 500km)
     Dmaxbig     = DmaxScaling*sourceDim;
     DistCutoff  = DScaling*sourceDim;  
 
@@ -702,20 +696,29 @@ for n=1:length(varargin)
 end
 
 end
-function mth            = get_completeness(M)
 
-edges       = floor(min(M)):0.1:ceil(max(M));
-[N,magBin]  = histcounts(M,edges);
-mth=magBin(find(N==max(N),1))+0.3;
+function [fMc] = calc_McMaxCurvature(mCatalog)
+  % Get maximum and minimum magnitudes of the catalog
+  fMaxMagnitude = max(mCatalog);
+  fMinMagnitude = min(mCatalog);
+  if fMinMagnitude > 0
+    fMinMagnitude = 0;
+  end
+  
+  % Number of magnitudes units
+  nNumberMagnitudes = (fMaxMagnitude*10) + 1;
+  
+  % Create a histogram over magnitudes
+  [vHist, vMagBins] = hist(mCatalog, fMinMagnitude:0.1:fMaxMagnitude);
+  
+  % Get the points with highest number of events -> maximum curvature  
+  fMc = vMagBins(max(find(vHist == max(vHist))));
+  if isempty(fMc)
+    fMc = nan;
+  end
 
-% if magBin(find(N==max(N),1)) > 4
-% mth = 5.0;
-% else 
-% mth = 2.5;
-% end
+end
 
-end % obtain the completeness of the earthquake catalog
-% function [Il]           = ind2logind(I,L)
-% Il = zeros(1,L);
-% Il(I) = 1;
-% end
+
+
+

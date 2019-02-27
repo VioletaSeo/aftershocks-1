@@ -1,12 +1,12 @@
 function worldmap_res(catalogName)
 tempCatFN= 'temp_earthquake_cat_merge.mat';
-minMag = 6;
+minMag = 6.5;
 delete_temp         = @() system(sprintf('rm %s',tempCatFN));
 
 worldmap_base()
 
-load('ISC_1976-2018.mat'); %#ok<LOAD>
-h = scatterm(quakes.lat,quakes.lon,2,[0 0 0], 'filled');
+load('IRIS_DMC_with_FMS.mat'); %#ok<LOAD>
+h = scatterm(CAT.lat,CAT.lon,2,[0 0 0], 'filled');
 h.Children.MarkerFaceAlpha = .1;
 
 switch catalogName
@@ -72,7 +72,6 @@ switch catalogName
         end
         legend([hAry{:}],fieldnames(CAT))
     case 'IRIS DMC'
-         load('IRIS_DMC_with_FMS.mat') %#ok<LOAD>
          aftershock_productivity_kernel(...
             CAT.time, ...
             CAT.lat, ...
@@ -83,6 +82,7 @@ switch catalogName
             'SaveCatalog',tempCatFN, ...
             'MinMainshockMag',minMag, ...
             'DepthRange',[0,55], ...
+            'Completeness', 4.3, ...
             'PlotYN', 'no'); %#ok<NODEF>
         clear CAT
         CAT = load(tempCatFN); delete_temp();

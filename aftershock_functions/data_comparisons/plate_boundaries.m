@@ -1,37 +1,54 @@
-function CAT = plate_boundaries(varargin)
+function PBCAT = plate_boundaries(varargin)
 
 % compare all tectonic evironments:
-
+load('IRIS_DMC_with_FMS_and_energy.mat');
+CAT     = iris_dmc_cat_with_fms_and_energy;
+minMag = 6.5;
+maxDepth = 55;
 %% 1) compute productivity catalogs
-defaultInpStr = {'ForeshockTimeWindow', 10      , ...
-                 'DepthRange',          [0,55]  , ...
-                 'ShowOverviewYN',      'no'}; % default input
+defaultInpStr = {CAT.time, ...
+    CAT.lat, ...
+    CAT.lon, ...
+    CAT.depth, ...
+    CAT.M, ...
+    CAT.fms, ...
+    'MinMainshockMag',minMag, ...
+    'DepthRange',[0,maxDepth], ...
+    'ReturnCatalog', 'yes', ...
+    'SaveCatalog', 'no', ...
+    'PlotYN','no', ...
+    'Completeness',4.3}; % default input
 PBClassArray  = {'all','OSR','OTF','OCB','CRB','CTF','CCB','SUB'};
 FMSArray      = {'all',2    ,1    ,3    ,2    ,1    ,3    ,3    };
-CAT	          = [];
+PBCAT	          = [];
 
 for iPB = PBClassArray
     PB = iPB{:};
-    CAT.(PB) = aftershock_productivity_GCMT_ISC(defaultInpStr{:},  ...
-                                                'PlateBoundaryClass',PB, ...
-                                                'PlateBoundaryDist',200);
+    ASinfo = aftershock_productivity_kernel(defaultInpStr{:},  ...
+        'PlateBoundaryClass',PB, ...
+        'PlateBoundaryDist',200);
+    
+    PBCAT.(PB) = CAT(ASinfo.ID,:);
+    PBCAT.(PB).MSres = ASinfo.MSres;
+    PBCAT.(PB).MSprod= ASinfo.MSprod;
+    
 end
 
 %% 2) plot each output
-if strcmp(varargin{1},'yes')
 PBClassSubset = PBClassArray;
-plot_prob(CAT,PBClassSubset);
+% plot_prob(CAT,PBClassSubset);
 
 %%
-plot_res_prod_comparison(CAT,PBClassSubset,6,FMSArray);
-end
+
+plot_res_prod_comparison(PBCAT,PBClassSubset,6,FMSArray);
+
 end
 
 %% *accessory functions
 function plot_prob(CATSTRUCT,FIELDS)
 figure; hold on;
 for iField = FIELDS
-    scatter(CATSTRUCT.(iField{:}).MSmag, CATSTRUCT.(iField{:}).MSprod_appended_cat1,'filled','MarkerFaceAlpha',0.5);
+    scatter(CATSTRUCT.(iField{:}).M, CATSTRUCT.(iField{:}).MSprod,'filled','MarkerFaceAlpha',0.5);
 end
 legend(FIELDS)
 set(gca,'YScale','log')    
@@ -49,20 +66,16 @@ tickName      = cell(length(FIELDS),1);
 
 for iField = FIELDS
     N   = N+1;
-    mag = CATSTRUCT.(iField{:}).MSmag;
-    fms = CATSTRUCT.(iField{:}).MSfms;
+    mag = CATSTRUCT.(iField{:}).M;
+    fms = CATSTRUCT.(iField{:}).fms;
     if strcmp(fmsChoice(N),'all'); Ifms = ones(size(fms)); else; Ifms = fms == fmsChoice{N}; end
     Im  = mag>Mc;
-    mag = mag(Im & Ifms);
-    res = CATSTRUCT.(iField{:}).MSres_appended_cat1(Im & Ifms);
-    prod= CATSTRUCT.(iField{:}).MSprod_appended_cat1(Im & Ifms);
-    [kMo,alpha] = getproductivity(mag,prod);
-    
+    res = CATSTRUCT.(iField{:}).MSres(Im & Ifms);  
     numNegInf(N) = sum(isinf(res))/length(res);
-    scatter(res,        N*ones(size(res)),  sz*2,'filled','MarkerFaceColor',colors(mod(N,7)+1,:), 'MarkerFaceAlpha',0.01)
-    scatter(median(res),N,                 sz,  'filled','MarkerFaceColor',colors(mod(N,7)+1,:))
-    plot(prctile(res,[40,60]),[N,N],'LineWidth',2,'Color',colors(mod(N,7)+1,:))
-    tickName{N} = sprintf('%s, N0 = %g', iField{:}, numNegInf(N));
+    scatter(res,        N*ones(size(res)),  sz*2,'filled','MarkerFaceColor',colors(mod(N,7)+1,:), 'MarkerFaceAlpha',0.1)
+    scatter(median(res),N,                  sz,  'filled','MarkerFaceColor',colors(mod(N,7)+1,:)/1.4)
+    plot(prctile(res,[25,75]),[N,N],'LineWidth',2,'Color',colors(mod(N,7)+1,:)/1.4)
+    tickName{N} = sprintf('%s', iField{:});
 end
 
 set(gca,'YTick',1:N,'YTickLabel',tickName','YLim',[0.1,N + 0.1])

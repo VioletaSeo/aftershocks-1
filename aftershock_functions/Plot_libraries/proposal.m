@@ -35,6 +35,9 @@ prod= MSCat.MSprod;
 fms = MSCat.fms;
 E   = MSCat.BBtotalEnergy;
 Enorm=E./mw2mo(M);
+dur = MSCat.RuptureDuration;
+durNorm = dur./(mw2mo(M)).^(1/3);
+
 depth= MSCat.depth;
 RT  = MSCat.RuptureDuration;
 age = get_crust_age(MSCat.lat, MSCat.lon, MSCat.depth);
@@ -271,6 +274,8 @@ plot(Mage,Merr(:,2),'--','LineWidth',1,'Color',[1 0 0 0.5])
 grid on
 ftsz(gcf,12);
 setsize(gcf,5,3);
+
+%%
 savefigure(gcf,'prod_vs_age',SAVEFIG)
 
 
@@ -294,6 +299,28 @@ set(gca,'Xscale','log');
 ftsz(gcf,12);
 setsize(gcf,6,3);
 savefigure(gcf,'prod_vs_energy',SAVEFIG)
+
+%% prod vs rupture duration
+
+figure
+subplot(1,2,1)
+scatter(dur,prod,[],c,'Filled','MarkerFaceAlpha',0.4)
+xlabel('Rupture Duration [s]')
+ylabel('Number of aftershocks (N)')
+set(gca,'Yscale','log');
+set(gca,'Xscale','log');
+
+subplot(1,2,2)
+scatter(durNorm, res,[],c,'Filled','MarkerFaceAlpha',0.4);
+xlabel('Scaled duration, t_R/Mo^{1/3} [s/(Nm)^{1/3}]')
+ylabel('Relative productivity (N^*)')
+set(gca,'XScale','log');
+
+%%
+ftsz(gcf,12);
+setsize(gcf,6,3);
+
+savefigure(gcf,'prod_vs_dur',SAVEFIG)
 
 
 %% FINITE FAULT INVERSIONS ANALYSIS

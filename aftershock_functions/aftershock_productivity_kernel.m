@@ -37,23 +37,27 @@ ID = (1:length(t))';
 if strcmp(p.Results.Completeness,'MaxMag'); Mc = (calc_McMaxCurvature(M)+0.3); else; Mc = p.Results.Completeness; end 
 [ID,t,lat,lon,depth,M,fms] = goodind(M>=Mc,ID,t,lat,lon,depth,M,fms);
 
-%% shuffle/synthetic time (probably not doing anthing unless specified)
+%% shuffle/synthetic time (probably not doing anything unless specified)
 t = redefine_time(t,p);
 
 %% analyse data
-[mainshockIndex,numberOfAftershocks,numberOfForeshocks] = ...
+[mainshockIndex,MSprod,FSprod] = ...
     get_aftershock_count(t,lat,lon,depth,M,fms,p); % input must be passed up
 
-%% subsample data
+%% get mainshocks
 [ID,MSt,MSlat,MSlon,MSdepth,MSmag,MSfms] = goodind(mainshockIndex,ID,t',lat',lon',depth',M',fms');
-I       = subsample_catalog(MSt',MSlat',MSlon',MSdepth',MSmag',MSfms',p);
-[ID,MSt,MSlat,MSlon,MSdepth,MSmag,MSfms,MSprod,FSprod] = goodind(I,ID,MSt,MSlat,MSlon,MSdepth,MSmag,MSfms, numberOfAftershocks',numberOfForeshocks');
 
-%% get productivity law
+%% get (GLOBAL) productivity law
 [MAG,MAGCOUNT,prefactor,alpha]          = productivity_law(MSmag,MSprod); % aftershock
+
+%% subsample data
+I       = subsample_catalog(MSt',MSlat',MSlon',MSdepth',MSmag',MSfms',p);
+[ID,MSt,MSlat,MSlon,MSdepth,MSmag,MSfms,MSprod,FSprod] = goodind(I,ID,MSt,MSlat,MSlon,MSdepth,MSmag,MSfms, MSprod',FSprod');
+
 
 %% get residual productivity
 [MSres]     = getMSres(MSmag,MSprod,prefactor,alpha);
+
 %% output
 plot_output(MAG,MAGCOUNT,prefactor,alpha,p,notUsingDefault);   
 varargout   = create_output(prefactor,alpha,p, notUsingDefault, MSmag, FSprod,M,MAG,MAGCOUNT);

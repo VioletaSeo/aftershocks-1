@@ -20,13 +20,15 @@ defaultInpStr = {CAT.time, ...
     'Completeness',4.3}; % default input
 PBClassArray  = {'all','OSR','OTF','OCB','CRB','CTF','CCB','SUB'};
 FMSArray      = {'all',2    ,1    ,3    ,2    ,1    ,3    ,3    };
+DISTArray     = [nan, 50    ,50   ,300  ,300  ,30   ,400  ,400];
+
 PBCAT	          = [];
 
-for iPB = PBClassArray
-    PB = iPB{:};
+for iPB = 1:length(PBClassArray)
+    PB = PBClassArray{iPB};
     ASinfo = aftershock_productivity_kernel(defaultInpStr{:},  ...
         'PlateBoundaryClass',PB, ...
-        'PlateBoundaryDist',200);
+        'PlateBoundaryDist',DISTArray(iPB));
     
     PBCAT.(PB) = CAT(ASinfo.ID,:);
     PBCAT.(PB).MSres = ASinfo.MSres;

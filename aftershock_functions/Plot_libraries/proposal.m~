@@ -275,6 +275,9 @@ grid on
 ftsz(gcf,12);
 setsize(gcf,5,3);
 
+Inan = isnan(age);
+scatter(350*ones(sum(Inan),1),res(Inan),100,'Filled','MarkerFaceAlpha',0.005);
+
 %%
 savefigure(gcf,'prod_vs_age',SAVEFIG)
 

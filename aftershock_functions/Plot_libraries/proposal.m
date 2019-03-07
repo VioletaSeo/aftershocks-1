@@ -275,6 +275,11 @@ grid on
 ftsz(gcf,12);
 setsize(gcf,5,3);
 
+% Inan = isnan(age);
+% scatter(300*ones(sum(Inan),1),res(Inan),100,'Filled','MarkerFaceAlpha',0.002);
+% scatter(300,median(res(Inan)),100,'Filled')
+% xlim([0,310])
+
 %%
 savefigure(gcf,'prod_vs_age',SAVEFIG)
 

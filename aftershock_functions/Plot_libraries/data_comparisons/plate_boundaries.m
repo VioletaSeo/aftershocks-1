@@ -17,10 +17,10 @@ defaultInpStr = {CAT.time, ...
     'ReturnCatalog', 'yes', ...
     'SaveCatalog', 'no', ...
     'PlotYN','no', ...
-    'Completeness',4.3}; % default input
+    'Completeness',4.5}; % default input
 PBClassArray  = {'all','OSR','OTF','OCB','CRB','CTF','CCB','SUB'};
 FMSArray      = {'all',2    ,1    ,3    ,2    ,1    ,3    ,3    };
-DISTArray     = [nan, 50    ,50   ,300  ,300  ,30   ,400  ,400];
+DISTArray     = [nan, 40    ,100   ,300  ,300  ,30   ,400  ,400];
 
 PBCAT	          = [];
 
@@ -84,7 +84,7 @@ for iField = FIELDS
     numNegInf(N) = sum(isinf(res))/length(res);
     scatter(res,        N*ones(size(res)),  sz*2,'filled','MarkerFaceColor',colors(mod(N,7)+1,:), 'MarkerFaceAlpha',0.1)
     scatter(median(res),N,                  sz,  'filled','MarkerFaceColor',colors(mod(N,7)+1,:)/1.4)
-    plot(prctile(res,[25,75]),[N,N],'LineWidth',2,'Color',colors(mod(N,7)+1,:)/1.4)
+    plot([prctile(res,33),prctile(res,66)],[N,N],'LineWidth',2,'Color',colors(mod(N,7)+1,:)/1.4)
     tickName{N} = sprintf('%s', iField{:});
 end
 

@@ -1,13 +1,13 @@
 function worldmap_res(catalogName)
 tempCatFN= 'temp_earthquake_cat_merge.mat';
-minMag = 6.5;
+minMag = 7;
 delete_temp         = @() system(sprintf('rm %s',tempCatFN));
 
 worldmap_base()
 
 load('IRIS_DMC_with_FMS.mat'); %#ok<LOAD>
-h = scatterm(CAT.lat,CAT.lon,2,[0 0 0], 'filled');
-h.Children.MarkerFaceAlpha = .1;
+%h = scatterm(CAT.lat,CAT.lon,2,[0 0 0], 'filled');
+%h.Children.MarkerFaceAlpha = .1;
 
 switch catalogName
     case 'ISC'
@@ -28,7 +28,7 @@ switch catalogName
         shapes = {'^','s','o'};
         aftershock_productivity_kernel(...
         	'eq_catalog.mat', ...
-            'DepthRange',[0,55], ...
+            'DepthRange',[0,55], ...,
             'SaveCatalog',tempCatFN, ...
             'MinMainshockMag',minMag, ...
             'PlotYN', 'no');
@@ -82,7 +82,7 @@ switch catalogName
             'SaveCatalog',tempCatFN, ...
             'MinMainshockMag',minMag, ...
             'DepthRange',[0,55], ...
-            'Completeness', 4.3, ...
+            'Completeness', 4.5, ...
             'PlotYN', 'no'); %#ok<NODEF>
         clear CAT
         CAT = load(tempCatFN); delete_temp();
@@ -92,5 +92,8 @@ switch catalogName
         SM.Children.MarkerFaceAlpha = .8;
         
 end
+
+c = colorbar;
+ylabel(c,'N^*')
         
 end

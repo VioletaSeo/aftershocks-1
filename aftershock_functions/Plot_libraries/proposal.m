@@ -23,7 +23,7 @@ maxDepth = 55;
     'ReturnCatalog', 'yes', ...
     'SaveCatalog', 'no', ...
     'PlotYN','no', ...
-    'Completeness',4.3);
+    'Completeness',4.5);
 MSCat = CAT(ASinfo.ID,:);
 MSCat.MSres = ASinfo.MSres;
 MSCat.MSprod= ASinfo.MSprod;
@@ -82,12 +82,12 @@ savefigure(gcf,'gr_plot_declust',SAVEFIG)
 %% sensitivity to time/space windows:
 if 1
 nT = 3;
-timeSelAry = logspace(1,3,nT);
+timeSelAry = [10,60,300];
 timeWinAry = 100/60 * timeSelAry;
 
 nDX = 3;
-distSelAry = logspace(0,2,nDX);
-distWinAry = 5/4 * distSelAry;
+distSelAry = [1,3,10];
+distWinAry = 4/3 * distSelAry;
 count = 0;
 figure
 for n = 1:nT
@@ -110,10 +110,10 @@ for n = 1:nT
             'TimeSelectionWindow',timeSelAry(n), ...
             'SearchRadius',distWinAry(m),...
             'SelectionRadius',distSelAry(m), ...
-            'Completeness', 4.3);
+            'Completeness', 4.5);
 
         SENScat = CAT(ASinfoSENS.ID,:);
-        scatter(SENScat.M,ASinfoSENS.MSprod,'Filled','MarkerFaceAlpha',0.4); hold on
+        scatter(SENScat.M,ASinfoSENS.MSprod,'Filled','MarkerFaceAlpha',0.1); hold on
         p1 = plot(SENScat.M,kSENS*10.^(alphaSENS*SENScat.M));
        
         [ASinfoSENS,kSFL,alphaSFL] = aftershock_productivity_kernel(...
@@ -132,19 +132,23 @@ for n = 1:nT
             'TimeSelectionWindow',timeSelAry(n), ...
             'SearchRadius',distWinAry(m),...
             'SelectionRadius',distSelAry(m), ...
-            'Completeness', 4.3, ...
+            'Completeness', 4.5, ...
             'ShuffleYN','yes');
         SENScat = CAT(ASinfoSENS.ID,:);
-        scatter(SENScat.M,ASinfoSENS.MSprod,'Filled','MarkerFaceAlpha',0.4,'MarkerFaceColor',[.4 .4 .4]);
+        scatter(SENScat.M,ASinfoSENS.MSprod,'Filled','MarkerFaceAlpha',0.05,'MarkerFaceColor',[.4 .4 .4]);
         p2 = plot(SENScat.M,kSFL*10.^(alphaSFL*SENScat.M),'k' );
         
-        legend([p1,p2],{sprintf('N=%0.1g10^{%0.1g M_w}',kSENS, alphaSENS) ...
-                sprintf('N_{SFL}=%0.1g10^{%0.1g M_w}',kSFL, alphaSFL)}, ...
+        legend([p1,p2],{sprintf('N=%0.1g \\times 10^{%0.1g M_w}',kSENS, alphaSENS) ...
+                sprintf('N_{SFL}=%0.1g \\times 10^{%0.1g M_w}',kSFL, alphaSFL)}, ...
                 'Location','southeast')
         
         title(['T = ',num2str(timeSelAry(n)), ' days, R = ',num2str(distSelAry(m)), ' R_{source}'])
         set(gca,'YScale','log')
         set(gca,'YLim',[0.1,10000])
+        if n==2 && m==2
+           set(gca,'Color',[0.92 1 0.9]) 
+        end
+            
         
     end
 end
@@ -188,6 +192,8 @@ set(gca,'Xlim',[-2,2])
 
 ftsz(gcf,16)
 setsize(gcf,6.5,5)
+
+%%
 savefigure(gcf,'fms_prod',SAVEFIG)
 
 %%
@@ -203,6 +209,7 @@ fms2 = fms(~isinf(res));
 worldmap_res('IRIS DMC');
 h = colorbar;
 ylabel(h,'Relative Productivity')
+%%
 setsize(gcf,8,6)
 savefigure(gcf,'worldmap_res',SAVEFIG)
 
@@ -232,10 +239,13 @@ ylabel('Relative Productivity (N^*)')
 set(gca,'XScale','log')
 xLim = ax.XLim;
 ax.XLim = [3,xLim(2)];
-legend({'Earthquake Sequences','Maximum depth Considered in this study'})
+legend({'Earthquake Sequences','Maximum depth in this study'},'Location','south')
+%%
 
 ftsz(gcf,12);
 setsize(gcf,5,3);
+
+%%
 savefigure(gcf,'prod_vs_depth',SAVEFIG)
 
 %% NearSS
@@ -253,27 +263,31 @@ setsize(gcf,2.5,1.8);
 savefigure(gcf,'prod_by_plate_boundary',SAVEFIG);
 
 %% prod vs age
+
+%%
 figure;
 yyaxis right
 hold on
 numBin      = 30;
-edges       = linspace(0,max(age),numBin);
-ylim([0,200]); ylabel('No aftershocks (N)')
+edges       = linspace(0,max((age)),numBin);
+ylim([0,300]); ylabel('No aftershocks (N)')
 I = isinf(res);
 histogram(age(I),edges,'EdgeColor','none');
 
 yyaxis left; ylim([-2,2]);
 
-scatter(age,res,25,c,'filled','MarkerFaceAlpha',0.2);
+scatter((age),res, (M-4).^4,c,'filled','MarkerFaceAlpha',0.1);
 xlabel('Sea floor age')
 ylabel('Relative Productivity')
-[Mage,Mres,Merr] = mov_mean(age,res,150,30);
+[Mage,Mres,Merr] = mov_mean((age),res,150,5);
 plot(Mage,Mres,'-','LineWidth',3,'Color',[1 0 0 0.5])
 plot(Mage,Merr(:,1),'--','LineWidth',1,'Color',[1 0 0 0.5])
 plot(Mage,Merr(:,2),'--','LineWidth',1,'Color',[1 0 0 0.5])
 grid on
 ftsz(gcf,12);
 setsize(gcf,5,3);
+
+
 
 % Inan = isnan(age);
 % scatter(300*ones(sum(Inan),1),res(Inan),100,'Filled','MarkerFaceAlpha',0.002);

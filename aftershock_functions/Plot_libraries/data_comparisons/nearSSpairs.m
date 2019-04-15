@@ -130,7 +130,27 @@ end
 
 %% 
 % plot_output_map(SScolocCAT,DScolocCAT) 
-
+XSS = get_coord(SScolocCAT);
+XDS = get_coord(DScolocCAT);
+r   = sqrt(sum((XSS-XDS).^2,2));
+ftsz    = @(fh,fontSize) set(findall(fh,'-property','FontSize'),'FontSize',fontSize);
+setsize = @(fh,dim1,dim2) set(fh,...
+    'Units',        'Inches', ...
+    'Position',     [0,0,dim1,dim2],...
+    'PaperUnits',   'Inches',...
+    'PaperSize',    [dim1,dim2]);
+figure; hold on
+plot([-1.5,1.5],[-1.5,1.5],'--k','LineWidth',2);
+scatter(SScolocCAT.MSres,DScolocCAT.MSres,[],r, 'Filled')
+xlim([-1.5,1.5]); ylim([-1.5,1.5])
+xlabel('Strike-slip mainshock N^*')
+ylabel('Dip-slip mainshock N^*')
+cH = colorbar;
+ylabel(cH,'Distance (km)');
+colormap('gray')
+legend({'1:1','Co-located pairs'},'Location','southeast')
+ftsz(gcf,12)
+setsize(gcf,4.5,3.5)
 %%
 plotres({MSCat.MSres, ...
          OTFCATSS.MSres, ...

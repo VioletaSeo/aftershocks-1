@@ -23,7 +23,7 @@ maxDepth = 55;
     'ReturnCatalog', 'yes', ...
     'SaveCatalog', 'no', ...
     'PlotYN','no', ...
-    'Completeness',4.3);
+    'Completeness',4.5);
 MSCat = CAT(ASinfo.ID,:);
 MSCat.MSres = ASinfo.MSres;
 MSCat.MSprod= ASinfo.MSprod;
@@ -204,6 +204,7 @@ worldmap_res('IRIS DMC');
 h = colorbar;
 ylabel(h,'Relative Productivity')
 setsize(gcf,8,6)
+
 savefigure(gcf,'worldmap_res',SAVEFIG)
 
 %% prod vs depth

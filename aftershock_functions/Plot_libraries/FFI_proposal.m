@@ -2,6 +2,7 @@
 
 hayesCat = load('Hayes_fully_merged_catalog.mat');
 c = hayesCat.cat;
+c = c(c.fms_appended_cat1 ~= 0,:);
 
 %%
 ftsz    = @(fh,fontSize) set(findall(fh,'-property','FontSize'),'FontSize',fontSize);
@@ -36,12 +37,16 @@ age   = c.age_appended_cat1;
 dip   = c.Dip;
 rake  = c.Rake;
 depth = c.Depth;
+litho = get_litho(c.Lat,c.Lon);
 
 %%
 colors = {[0.7      0.7       0.7], ...
           [0        0.4470    0.7410],...
           [0.4660   0.6740    0.1880], ...
           [0.6350   0.0780    0.1840]}; % colors
+colorMatrix = [[0        0.4470    0.7410];
+               [0.4660   0.6740    0.1880];
+               [0.6350   0.0780    0.1840]]; % colors
 colorAry = assign_color(fms+1,colors);
 
 %% r2 stem
@@ -73,9 +78,9 @@ setsize(gcf,2.8*2,2.5)
 savefigure(gcf,'prod_vs_aspect','yes')
 %%
 
-goodCat = table(Enorm, depth,logA,logAnorm,logSD,dip,rake,age,res);
+goodCat = table(Enorm, depth,logA,logAnorm,logSD,dip,rake,age,litho,res);
 
-%%
+%% ML excersize
 load('SVMmodel.mat')
 figure;
 hold on; 
@@ -87,9 +92,34 @@ ylabel('Prediction')
 ftsz(gcf,11);
 xlim([-1.2,1.2])
 ylim([-1.2,1.2])
-setsize(gcf,3,3)
+
 %%
+setsize(gcf,3,3)
 savefigure(gcf,'response','yes')
+
+%% plot matrix
+figure;
+[h,ax,bigax] = gplotmatrix([age,logAnorm,dip,res],[],fms,colorMatrix,[], [],'off');
+set(ax(4,:),'Color',[0.95 0.95 0.95])
+set(ax(:,4),'Color',[0.95 0.95 0.95])
+for n = 1:4
+    for m = 1:3
+        set(h(n,n,m),'DisplayStyle','bar','FaceColor',colorMatrix(m,:))
+    end
+end
+ax(1,1).YLabel.String = 'Age (Ma)';
+ax(2,1).YLabel.String = 'A_{norm}';
+ax(3,1).YLabel.String = 'Dip';
+ax(4,1).YLabel.String = 'N^*';
+
+ax(4,1).XLabel.String = 'Age (Ma)';
+ax(4,2).XLabel.String = 'A_{norm}';
+ax(4,3).XLabel.String = 'Dip';
+ax(4,4).XLabel.String = 'N^*';
+
+ftsz(gcf,11);
+setsize(gcf,6,5)
+savefigure(gcf,'plotmatrix','yes')
 
 %%
 

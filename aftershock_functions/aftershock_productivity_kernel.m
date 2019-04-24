@@ -18,6 +18,9 @@ function varargout = aftershock_productivity_kernel(varargin)
 % aftershock_productivity_kernel(...,'Spec',SpecVal)     
 % see parseinput for possible specifciations
 
+% I recommend doing subsampling after (seperately getting aftershock
+% statistic.
+
 % output:
 
 % [p,alpha, FSp, FS ] = aftershock_productivity_kernel(...)

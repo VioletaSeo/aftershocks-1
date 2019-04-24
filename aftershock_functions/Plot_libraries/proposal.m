@@ -2,15 +2,13 @@ clear
 close all
 
 %%
-SAVEFIG = 'yes';
+SAVEFIG = 'no';
 
 %%
 load('IRIS_DMC_with_FMS_and_energy.mat')
 CAT     = iris_dmc_cat_with_fms_and_energy;
-minMag  = 6;
-% completensess = 4.3;
-% magRange = [completeness,10];
-maxDepth = 55;
+minMag  = 6.5;
+maxDepth = 100;
 [ASinfo,k,alpha] = aftershock_productivity_kernel(...
     CAT.time, ...
     CAT.lat, ...
@@ -27,8 +25,10 @@ maxDepth = 55;
 MSCat = CAT(ASinfo.ID,:);
 MSCat.MSres = ASinfo.MSres;
 MSCat.MSprod= ASinfo.MSprod;
-%%
+
 M   = MSCat.M;
+lat = MSCat.lat;
+lon = MSCat.lon;
 t   = MSCat.time;
 res = MSCat.MSres;
 prod= MSCat.MSprod;
@@ -212,6 +212,7 @@ ylabel(h,'Relative Productivity')
 %%
 setsize(gcf,8,6)
 savefigure(gcf,'worldmap_res',SAVEFIG)
+t   = MSCat.time;
 
 %% prod vs depth
 

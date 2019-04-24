@@ -1,6 +1,6 @@
 load('IRIS_DMC_with_FMS_and_energy.mat')
 CAT = iris_dmc_cat_with_fms_and_energy;
-xlat = -23;
+xlat = -20;
 lonR = [-80,-50];
 N = 200;
 lons = linspace(lonR(1),lonR(2),N);

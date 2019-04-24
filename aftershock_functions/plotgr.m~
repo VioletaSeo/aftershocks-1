@@ -11,7 +11,7 @@ for n = 1:nMags
     gr(n) = sum(M > mags(n));    
 end
 
-mc = KS_completeness(M,'yes');
+mc = 4.5;KS_completeness(M,'yes');
 
 figure
 hold on
@@ -23,8 +23,8 @@ set(gca,'Yscale','log')
 utsu_correction = inc/2;
 b = 1/log(10) * 1/mean(M(M>=mc)-mc+utsu_correction);
 I = mags >= mc;
-a = log10(sum(M>mc)); %mean(log10(gr(I).*10.^(b*mags(I)')));
-plot(mags(I),10.^(a-b*(mags(I)-mc)),'--')
+a = log10(sum(M>M); %mean(log10(gr(I).*10.^(b*mags(I)')));
+plot(mags(I),10.^(a-b*mags(I)),'--')
 
 legend({'',sprintf('b = %0.2g, M_c = %0.2g',b,mc)})
 

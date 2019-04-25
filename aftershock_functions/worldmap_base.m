@@ -1,4 +1,4 @@
-function worldmap_base
+function varargout = worldmap_base
 
 figure
 hold on
@@ -15,13 +15,14 @@ expectedPBClass             = {'OSR','OTF','OCB','CRB','CTF','CCB','SUB'};
 NClass  = length(expectedPBClass);
 h = cell(NClass,1);
 colors     = get(gca, 'ColorOrder');
+
 for iClass = 1:NClass
     PBI     = contains(PBclass,expectedPBClass{iClass});
     [latPB,lonPB] = goodind(PBI,C{[4,3]});
     h{iClass} = scatterm(latPB,lonPB,[],colors(mod(iClass-1,length(colors))+1,:),'.');
 end
 
-legend([h{:}],expectedPBClass)
+varargout{1} = legend([h{:}],expectedPBClass);
     
 end
 

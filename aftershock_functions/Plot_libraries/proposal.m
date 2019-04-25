@@ -212,7 +212,6 @@ ylabel(h,'Relative Productivity')
 %%
 setsize(gcf,8,6)
 savefigure(gcf,'worldmap_res',SAVEFIG)
-t   = MSCat.time;
 
 %% prod vs depth
 

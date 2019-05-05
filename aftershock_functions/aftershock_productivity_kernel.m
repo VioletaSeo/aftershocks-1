@@ -600,7 +600,7 @@ function    [magArray,prodArray,K,A]            = productivity_law(MAGNITUDE,AFT
 increment = 0.1; 
 minmaxMag = minmax(MAGNITUDE');
 
-magArray    = minmaxMag(1):increment:minmaxMag(2);
+magArray    = (minmaxMag(1)):increment:minmaxMag(2);
 numMag      = length(magArray);
 prodArray   = zeros(1,numMag);
 

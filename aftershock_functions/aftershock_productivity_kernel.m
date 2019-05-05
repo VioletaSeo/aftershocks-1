@@ -18,6 +18,9 @@ function varargout = aftershock_productivity_kernel(varargin)
 % aftershock_productivity_kernel(...,'Spec',SpecVal)     
 % see parseinput for possible specifciations
 
+% I recommend doing subsampling after (seperately getting aftershock
+% statistic.
+
 % output:
 
 % [p,alpha, FSp, FS ] = aftershock_productivity_kernel(...)
@@ -597,7 +600,7 @@ function    [magArray,prodArray,K,A]            = productivity_law(MAGNITUDE,AFT
 increment = 0.1; 
 minmaxMag = minmax(MAGNITUDE');
 
-magArray    = minmaxMag(1):increment:minmaxMag(2);
+magArray    = (minmaxMag(1)):increment:minmaxMag(2);
 numMag      = length(magArray);
 prodArray   = zeros(1,numMag);
 

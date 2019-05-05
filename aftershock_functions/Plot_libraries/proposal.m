@@ -2,15 +2,13 @@ clear
 close all
 
 %%
-SAVEFIG = 'yes';
+SAVEFIG = 'no';
 
 %%
 load('IRIS_DMC_with_FMS_and_energy.mat')
 CAT     = iris_dmc_cat_with_fms_and_energy;
-minMag  = 6;
-% completensess = 4.3;
-% magRange = [completeness,10];
-maxDepth = 55;
+minMag  = 6.5;
+maxDepth = 100;
 [ASinfo,k,alpha] = aftershock_productivity_kernel(...
     CAT.time, ...
     CAT.lat, ...
@@ -28,9 +26,14 @@ MSCat = CAT(ASinfo.ID,:);
 MSCat.MSres = ASinfo.MSres;
 MSCat.MSprod= ASinfo.MSprod;
 
+<<<<<<< HEAD
 
 %%
+=======
+>>>>>>> 012f8abd1ad8ed9dc18878b04eddccd5195b93c6
 M   = MSCat.M;
+lat = MSCat.lat;
+lon = MSCat.lon;
 t   = MSCat.time;
 res = MSCat.MSres;
 prod= MSCat.MSprod;

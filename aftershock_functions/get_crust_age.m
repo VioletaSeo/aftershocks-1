@@ -13,7 +13,7 @@ age = ageAry(:,3);
 %%
 nMS = length(lat);
 CRUSTAGE = zeros(nMS,1);
-Dcutoff = 200; %km
+Dcutoff = 30; %km
 
 for n = 1:nMS
     D = sqrt((Xe(n)-Xa).^2 + (Ye(n)-Ya).^2 + (Ze(n)-Za).^2);

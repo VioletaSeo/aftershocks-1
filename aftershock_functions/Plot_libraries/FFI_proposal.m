@@ -52,7 +52,7 @@ colorAry = assign_color(fms+1,colors);
 %% r2 stem
 X = [log10(areaNorm), Wnorm,Lnorm,H,A,V,log10(SD),Y,P,log10(Enorm),log10(durNorm)];
 Y = c.MSres_appended_cat1;
-SourceParameters = {'A*','W*','L*','H','A_r','V_r','\Delta\sigma','Y','P','E*', 't*'};
+SourceParameters = {'A*','W*','L*','log(H)','A_r','V_r','\Delta\sigma','Y','P','E*', 't*'};
 r2analysis(X,Y,SourceParameters,10000);
 %%
 setsize(gcf,6,2)

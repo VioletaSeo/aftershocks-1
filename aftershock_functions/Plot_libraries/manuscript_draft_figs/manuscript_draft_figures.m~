@@ -8,7 +8,7 @@
 %% preamble:
 % clear
 % close all
-SAVEFIG = 'no';
+SAVEFIG = 'yes';
 p = mfilename('fullpath');
 [filepath,~,~] = fileparts(p);
 ftsz    = @(fh,fontSize) set(findall(fh,'-property','FontSize'),'FontSize',fontSize);
@@ -66,8 +66,8 @@ depth   = MSCat.depth;
 t       = MSCat.time;
 
 % aftershock stats
-res     = MSCat.MSres;
 prod    = MSCat.MSprod;
+res     = get_res(M,prod);
 
 % source properties
 fms     = MSCat.fms;
@@ -151,8 +151,8 @@ colorAryFFI = assign_color(FFIfms+1,colors);
 %% 
 % 1) productivity law 
 plot_productivity_law(M,prod,res,cAry)
-ftsz(gcf,10)
-setsize(gcf,4,3.5)
+ftsz(gcf,8)
+setsize(gcf,4.5,3.5)
 savefigure(gcf,'prod_law',SAVEFIG)
 
 %% 
@@ -163,42 +163,53 @@ setsize(gcf,7.5,4)
 savefigure(gcf,'worldmap_res',SAVEFIG)
 
 %%
-% 3) Productivity by plate boundary
+% 3) regional maps
+plot_worldmap_prod(lat,lon,res)
+ftsz(gcf,10)
+setsize(gcf,7.5,4)
+savefigure(gcf,'worldmap_res',SAVEFIG)
+
+%%
+% 4) Productivity by plate boundary
 plot_prod_by_pb(PB,res)
-ftsz(gcf,12)
-setsize(gcf,5,2)
+ftsz(gcf,8)
+setsize(gcf,3.5,1.5)
 savefigure(gcf,'prod_by_pb',SAVEFIG)
 
 %%
-% 4) Prod vs age
-plot_prod_vs_age(age,res,M)
+% 5) Prod vs age
+plot_prod_vs_age(age,res,M,cAry)
 ftsz(gcf,12);
 setsize(gcf,5,3);
+%%
 savefigure(gcf,'prod_vs_age',SAVEFIG)
 
 
 %%
-% 5) Stem
+% 6) Stem
 X = [log10(areaNorm), log10(Wnorm),log10(Lnorm),log10(H),(A),V,log10(SD),Yng,P,log10(Enorm),log10(durNorm),FFIdip]; Y = FFIres;
 SourceParameters = {'A*','W*','L*','H','A_r','V_r','log(\Delta\sigma)','Yng','P','E*', 't*','dip'};
 plot_r2_stems(X,Y,SourceParameters,colorAryFFI,SD,A,Wnorm)
-ftsz(gcf,10);
+ftsz(gcf,8);
 setsize(gcf,6.5,4);
-savefigure(gcf,'prod_vs_age',SAVEFIG)
 
 %%
-% 6) FMS dependence
+savefigure(gcf,'stem_plot',SAVEFIG)
+
+%%
+% 7) FMS dependence
 
 
 %%
-% 7) Caltech plot
+% 8) Caltech plot
 caltech_plot(wholeCat.depth,wholeCat.age,wholeCat.fms,wholeCat.pb,wholeCat.MSres, A, Wnorm, SD, FFIres) % FINITE FAULTS NEED TO HAVE THE SAME RES CALC!
 ftsz(gcf,10);
 setsize(gcf,6.5,4);
-savefigure(gcf,'prod_vs_age',SAVEFIG)
+%%
+savefigure(gcf,'cal_tech',SAVEFIG)
 
 %%
-% 8) kn vs SVM
+% 9) kn vs SVM
 % I = ~isnan(FFIage);
 plot_ML([(FFIage),log10(Wnorm),(FFIdip),log10(areaNorm)],FFIres,c.Lat,c.Lon,c.Depth)
 setsize(gcf,6.2,3)
@@ -216,33 +227,44 @@ savefigure(gcf,'response','yes')
 
 %%plots:
 function plot_productivity_law(M,prod,res,c)
+
+tpos = [-0.15,0.9];
 figure
+
+% plot a)
 subplot(3,3,[1:2,4:5])
+t = title('a)'); set(t,'Position',tpos,'Units','normalized')
 hold on
+
 [magArray,prodArray,K,A] = productivity_law(M,prod);
 scatter(M,prod,40,c,'filled','MarkerFaceAlpha',0.2);
 set(gca,'Yscale','log');
 scatter(magArray,prodArray,'s','k')
 plot(magArray,K*10.^(A*magArray),'--k','LineWidth',2);
-ylabel('Number of Aftershocks (N)')
+ylabel('Number of Aftershocks')
 set(gca,'xlim', [min(M)-0.2,9.5],'XTickLabel',[])
 
-lg = legend({'Mainshock','Median',sprintf('%0.2g 10^{%0.2g M_w}',K,A)}, ...
+kexp = log10(K);
+lg = legend({'Mainshock','Median',sprintf('10^{%0.2g M %0.3g}',A,kexp)}, ...
     'Location','southeast');
 
 newPosition = [0.66 0.4 0.1 0.1];
 newUnits = 'normalized';
 set(lg,'Position', newPosition,'Units', newUnits);
 
+% plot b)
 subplot(3,3,7:8)
+t = title('b)'); set(t,'Position',tpos,'Units','normalized')
+
 hold on
 scatter(M,res,40,c,'filled','MarkerFaceAlpha',0.2);
 set(gca,'xlim', [min(M)-0.2,9.5])
 xlabel('M_w')
 ylabel('N^*')
 
-
-subplot(3,3,9)
+% plot c)
+subplot(3,3,9); hold on
+t = title('c)'); set(t,'Position',tpos,'Units','normalized')
 histogram(res,25,'FaceColor',[0.5 0.5 0.5],'EdgeColor','none')
 view(90, -90)
 set(gca,'XTickLabel',[])
@@ -291,7 +313,7 @@ xlabel('Relative productivity')
 
 end
 
-function plot_prod_vs_age(age,res,M)
+function plot_prod_vs_age(age,res,M,c)
 
 figure;
 yyaxis right
@@ -307,7 +329,7 @@ yyaxis left; ylim([-2,2]);
 scatter((age),res, (M-4).^4,c,'filled','MarkerFaceAlpha',0.2);
 xlabel('Sea floor age')
 ylabel('Relative Productivity')
-[Mage,Mres,Merr] = mov_mean((age),res,ceil(range(age)/(5)),2.5);
+[Mage,Mres,Merr] = mov_mean((age),res,ceil(range(age)/20),10);
 plot(Mage,Mres,'-','LineWidth',3,'Color',[1 0 0 0.5])
 plot(Mage,Merr(:,1),'--','LineWidth',1,'Color',[1 0 0 0.7])
 plot(Mage,Merr(:,2),'--','LineWidth',1,'Color',[1 0 0 0.7])
@@ -321,24 +343,34 @@ figure
 subplot(2,3,1:3);
 r2analysis(X,res,SourceParameters,10000);
 set(gca,'YTickLabel','','YTick',[])
+t = title('a)'); 
+set(t,'Units','normalized','Position',[-0.04,0.9])
 
 subplot(2,3,4)
 scatter(SD,res,[],colorAry,'filled','MarkerFaceAlpha',0.4)
 set(gca,'XScale','log')
 xlabel('Stress Drop, \Delta \sigma_E [MPa]')
 ylabel('Relative Productivity')
+set(gca,'Xtick',[10^-1,1,100])
+t = title('b)'); 
+set(t,'Units','normalized','Position',[-0.12,0.98])
 
 subplot(2,3,5)
 scatter(Wnorm,res,[],colorAry,'filled','MarkerFaceAlpha',0.4)
 set(gca,'XScale','log')
 set(gca,'Yticklabel','')
 xlabel('Normalized width, W*')
+t = title('c)'); 
+set(t,'Units','normalized','Position',[-0.12,0.98])
 
 subplot(2,3,6);
+
 scatter(A,res,[],colorAry,'filled','MarkerFaceAlpha',0.4)
 %set(gca,'XScale','log')
 xlabel('Aspect Ratio')
 set(gca,'Yticklabel','')
+t = title('d)'); 
+set(t,'Units','normalized','Position',[-0.12,0.98])
 
 
 end
@@ -492,7 +524,7 @@ for n = 1:nX
 end
 end
 
-function    [magArray,prodArray,K,A]            = productivity_law(MAGNITUDE,AFTERSHOCKS)
+function [magArray,prodArray,K,A] = productivity_law(MAGNITUDE,AFTERSHOCKS)
 
 increment = 0.1; 
 minmaxMag = minmax(MAGNITUDE');

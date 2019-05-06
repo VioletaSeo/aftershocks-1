@@ -1,8 +1,16 @@
-function worldmap_base
+function worldmap_base(region,newplot)
 
-figure
+if nargin == 2 && ~strcmp(newplot,'no')
+    figure
+end
+
 hold on
-worldmap({'world'})
+if nargin == 0
+    worldmap({'world'})
+else
+    worldmap(region)
+end
+    
 load coastlines
 %plotm(coastlat, coastlon)
 geoshow('landareas.shp', 'FaceColor', [0.9 0.9 0.9])

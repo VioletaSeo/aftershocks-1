@@ -26,11 +26,6 @@ MSCat = CAT(ASinfo.ID,:);
 MSCat.MSres = ASinfo.MSres;
 MSCat.MSprod= ASinfo.MSprod;
 
-<<<<<<< HEAD
-
-%%
-=======
->>>>>>> 012f8abd1ad8ed9dc18878b04eddccd5195b93c6
 M   = MSCat.M;
 lat = MSCat.lat;
 lon = MSCat.lon;

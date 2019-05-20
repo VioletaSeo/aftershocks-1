@@ -1,7 +1,7 @@
 function [validationPredictions, validationRMSE,regressionSVM] = train_SVM(predictors,response)
 
 % Perform cross-validation
-KFolds = 5;
+KFolds = length(response);
 cvp = cvpartition(size(response, 1), 'KFold', KFolds);
 % Initialize the predictions to the proper sizes
 validationPredictions = response;

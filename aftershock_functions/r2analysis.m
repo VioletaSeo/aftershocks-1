@@ -62,7 +62,6 @@ end
 h = histogram(maxRshuffle,'FaceColor', [0.8 0.8 0.8],'EdgeColor',[1 1 1]);
 hold on
 
-
 xlabel('Variance Reduction')
 set(gca,'Xlim',[0,0.2])
 ah = gca;
@@ -70,28 +69,42 @@ yLim = ah.YLim;
 recX = linspace(0,max(maxRshuffle),20);
 recX = recX(2:end);
 
-plot(repmat(prctile(maxRshuffle,95),1,2),yLim,'LineWidth',3,'Color',[1 0 0 0.2])
-text(prctile(maxRshuffle,96),0.9*yLim(2), 'p = 0.05','Color','r')
+% plot(repmat(prctile(maxRshuffle,95),1,2),yLim,'LineWidth',3,'Color',[1 0 0 0.2])
+% text(prctile(maxRshuffle,96),0.9*yLim(2), 'p = 0.05','Color','r')
 
 % for iDim = recX
 %     rectangle('Position',[0,0,iDim,yLim(2)],'FaceColor',[1 0 0 0.005],'EdgeColor','none')
 % end
 
+
 corrSign = logical(corrSign);
-SPh = stem(R(corrSign),3*sqrt(mit)*ones(length(R(corrSign)), 1), ...
+SPh = stem(R(corrSign),2.5*sqrt(mit)*ones(length(R(corrSign)), 1), ...
     'Color', [1, 0, 0, 0.1], ...
     'LineWidth',2);
 
-SNh = stem(R(~corrSign),3*sqrt(mit)*ones(length(R(~corrSign)), 1), ...
+SNh = stem(R(~corrSign),2.5*sqrt(mit)*ones(length(R(~corrSign)), 1), ...
     'Color', [0, 0, 1, 0.1], ...
     'LineWidth',2);
 
 legend([h,SPh,SNh],{'Max by permution','Positive corr.','Negative corr.'},'Location','northeast')
 
-texth = text(R, 3.3*sqrt(mit)*ones(length(R),1), SourceParameters);
+texth = text(R, 3*sqrt(mit)*ones(length(R),1), SourceParameters);
 set(texth, 'Rotation', 45)
-set(gca,'YLim',yLim)
+set(gca,'YLim',yLim,'Ytick',[])
 set(findall(gcf,'-property','FontSize'),'FontSize',12)
+ax1 = gca;
+ax2 = axes('Position',ax1.Position,...
+    'Ytick',[],...
+    'XAxisLocation','top',...
+    'Color','none', ...
+    'Xlim',[0,0.2], ...
+    'Xtick',0:0.02:2);
+xlabel('Family-wise p-value')
+xt = get(ax2,'Xtick');
+for n = 1:length(xt)
+   xtl{n} = sprintf('%0.1g',(sum(maxRshuffle > xt(n))/length(maxRshuffle)));
+end
+set(ax2,'Xtick',xt,'XtickLabel',xtl)
 
 end
 

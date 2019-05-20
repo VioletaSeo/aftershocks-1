@@ -417,7 +417,7 @@ classdef fsp_inversion < handle
             fclose(FID);
             
             %% run stresses.f MUST BE COMPILED
-            [~,txtOut]  = system([functionDir,'/stresses'],'-echo');
+            [~,txtOut]  = system([functionDir,'/stresses']);
             
             %% read output
             
@@ -470,10 +470,10 @@ function [xGrid,yGrid, slipMap, rakeMap, moMap] = grid_slip_inv(FSP)
 
 end
 
-function out = num2down(cellStr,str)
+function out            = num2down(cellStr,str)
 out = str2double(cellStr(find(strcmp(cellStr,str))+2));
 end
-function structOut = read_nums(line,varargin)
+function structOut      = read_nums(line,varargin)
 structOut = [];
 for n = 1:length(varargin)
     structOut.(varargin{n}) = num2down(split(line),varargin{n});
@@ -484,7 +484,7 @@ for n = 1:N
     fgetl(fid);
 end
 end
-function structOut = aggregate_struct(varargin)
+function structOut      = aggregate_struct(varargin)
 structOut = [];
 for n = 1:length(varargin)
     structN = varargin{n};
@@ -494,7 +494,7 @@ for n = 1:length(varargin)
     end
 end
 end
-function varargout = interp_maps(x,y,xg,yg,varargin)
+function varargout      = interp_maps(x,y,xg,yg,varargin)
 
 for n = 1:length(varargin)
     map = griddata(x,y,varargin{n},xg,yg);
@@ -502,7 +502,7 @@ for n = 1:length(varargin)
 end
 
 end
-function B=inpaint_nans(A,method)
+function B              = inpaint_nans(A,method)
 % INPAINT_NANS: in-paints over nans in an array
 % usage: B=INPAINT_NANS(A)          % default method
 % usage: B=INPAINT_NANS(A,method)   % specify method used
@@ -994,7 +994,7 @@ end
 % A was when we came in.
 B=reshape(B,n,m);
 end
-function neighbors_list=identify_neighbors(n,m,nan_list,talks_to)
+function neighbors_list = identify_neighbors(n,m,nan_list,talks_to)
 % identify_neighbors: identifies all the neighbors of
 %   those nodes in nan_list, not including the nans
 %   themselves
@@ -1053,7 +1053,7 @@ else
   neighbors_list=[];
 end
 end
-function [ pointCloudOut ] = flatten_XYZ( XYZ )
+function [pointCloudOut]= flatten_XYZ( XYZ )
 %flatten_point_cloud: transforms the input pointcloud by a rotation to a flat
 %plane and a translation to the zero plane
 
@@ -1092,7 +1092,7 @@ ypts                = flatXYZ(:,2)-min(flatXYZ(:,2));
 pointCloudOut       = [xpts,ypts,zpts];
 
 end
-function [n,V,p] = affine_fit(X)
+function [n,V,p]        = affine_fit(X)
     %Computes the plane that fits best (lest square of the normal distance
     %to the plane) a set of sample points.
     %INPUTS:
@@ -1121,7 +1121,7 @@ function [n,V,p] = affine_fit(X)
     n = V(:,1);
     V = V(:,2:end);
 end
-function [PADDEDGRID] = pad_grid(GRID)
+function [PADDEDGRID]   = pad_grid(GRID)
 % add a zeros of width/length of grid around grid
 
 gridSize = size(GRID);
@@ -1132,7 +1132,7 @@ PADDEDGRID = [repmat(zeroGrid,1,3)      ;...
     repmat(zeroGrid,1,3)      ];
 
 end
-function width = autocorrelation_width(X,Y)
+function width          = autocorrelation_width(X,Y)
     dx = (X(2)-X(1)); 
     [C,lags]    =xcorr(Y);
     Area1       =trapz(lags*dx,C);

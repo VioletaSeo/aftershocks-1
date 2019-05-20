@@ -1,4 +1,4 @@
-function fspInvObjArray = loop_over_dir(dirQ)
+function varargout = loop_over_dir(dirQ)
 
 dirInfo = dir(dirQ);
 nF  = length(dir);
@@ -23,10 +23,14 @@ MS  = zeros(length(eqs), 1);
 for n = 1:length(eqs)
     MS(n) = eqs(n).Parameters.Nsg;
 end
-
 eqSingleRupt = eqs(MS == 1);
 fspInvObjArray = eqSingleRupt;
+fspMultRupt = eqs(MS ~= 1);
 
-save('fsp.mat','fspInvObjArray')
+varargout{1} = fspInvObjArray;
+varargout{2} = fspMultRupt;
+
+% save('fsp.mat','fspInvObjArray')
+% save('fsp_multi_rupt.mat','fspMultRupt')
 
 end

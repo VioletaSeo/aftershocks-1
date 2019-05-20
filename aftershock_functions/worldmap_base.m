@@ -6,14 +6,17 @@ end
 
 hold on
 if nargin == 0
-    worldmap({'world'})
+    h = worldmap([-90 90], [-360 0]);
 else
-    worldmap(region)
+    h = worldmap(region);
 end
+
+set(findall(h,'Tag','PLabel'),'visible','off')
+set(findall(h,'Tag','MLabel'),'visible','off')
     
 load coastlines
 %plotm(coastlat, coastlon)
-geoshow('landareas.shp', 'FaceColor', [0.9 0.9 0.9])
+geoshow('landareas.shp', 'FaceColor', [0.7 0.7 0.7],'EdgeColor','none')
 
 fn      = 'PB2002_steps.dat';
 fileID  = fopen(fn);
@@ -22,7 +25,16 @@ PBclass = C{end};
 expectedPBClass             = {'OSR','OTF','OCB','CRB','CTF','CCB','SUB'};
 NClass  = length(expectedPBClass);
 h = cell(NClass,1);
-colors     = get(gca, 'ColorOrder');
+colors     = [0.4660    0.6740    0.1880; ...
+                   0    0.4470    0.7410; ...
+              0.6350    0.0780    0.1840; ...
+              0.4660    0.6740    0.1880; ...
+                   0    0.4470    0.7410; ...
+              0.6350    0.0780    0.1840; ...
+              0.6350    0.0780    0.1840];
+                   
+              
+%colors     = get(gca, 'ColorOrder');
 
 for iClass = 1:NClass
     PBI     = contains(PBclass,expectedPBClass{iClass});
@@ -31,8 +43,8 @@ for iClass = 1:NClass
     
     lat = merge_vec_nan(latPB,latE);
     lon = merge_vec_nan(lonPB,lonE);
-    
-    h{iClass} = plotm(lat,lon,'color',colors(mod(iClass-1,length(colors))+1,:),'LineWidth',2);
+    h{iClass} = plotm(lat,lon,'color',[0.5350    0.0780    0.1840],'LineWidth',0.8);
+    %h{iClass} = plotm(lat,lon,'color',colors(mod(iClass-1,length(colors))+1,:),'LineWidth',2);
 end
 
 %varargout{1} = legend([h{:}],expectedPBClass);

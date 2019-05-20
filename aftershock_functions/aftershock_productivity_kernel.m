@@ -548,7 +548,7 @@ for mm=maxmag:-0.1:minmag
 %     mo          = (10^((mm+10.73)*1.5))*10^-7;
 %     stressDrop  = 10^5*10;
 %     sourceDim   = 2 * 0.001 * (mo*(7/16) / stressDrop) ^ (1/3) % in km tbl 9.1 modern global seismo lay
-    sourceDim   = 2*10^(0.59*mm)/10^3; % wells and coppesmith 1994 (M6 ~ 20km, M9 ~ 500km)
+    sourceDim   = 2*10^(0.59*mm)/10^3; % wells and coppesmith 1994 (M6 ~ 7km, M9 ~ 400km)
     Dmaxbig     = DmaxScaling*sourceDim;
     DistCutoff  = DScaling*sourceDim;  
 

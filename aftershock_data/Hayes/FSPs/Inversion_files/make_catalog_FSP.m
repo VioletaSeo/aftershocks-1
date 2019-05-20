@@ -3,6 +3,8 @@ function [CAT, varargout] = make_catalog_FSP(quakes,NEWCATALOGNAME)
 % HAS PATH DEPENDENCIES!!! 
 % needs quakes
 
+% I THINK THIS IS DEPRECATED
+
 figure
 path2data =  '/auto/home/kdascher/Documents/UCSC/projects/aftershock_productivity/aftershock_data/GCMT/eq_catalog.mat';
 % aftershock_productivity_kernel(path2data,'DepthRange', [0,55]);

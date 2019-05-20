@@ -7,7 +7,7 @@ loc     = geodetic2ecef(wgs84,lat,lon,-depth);
 %% hold data out for validation
 indices = crossvalind('Kfold',res,5);
 hold on
-for i = 1:10
+for i = 1:5
     test = (indices == i); 
     train = ~test;
     resHat = knn_regress(loc(train,:),res(train),loc(test,:),5);

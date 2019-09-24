@@ -126,7 +126,7 @@ defaultMinMainshockMag      = 'min';   % minimum magnitude of mainshovk to analy
 % 3) options
 
 defaultSaveData         = 'mainshock_info.mat'; % alternatively an actual file name
-defaultReturnCatalog  = 'no';
+defaultReturnCatalog    = 'no';
 
 % 4) plotting output
 defaultPlotYN           = 'yes';        % plot a figure of the output
@@ -496,11 +496,222 @@ function    [mainShockIndex,numberOfAftershock, numberOfForeshocks] = ...
 % out{2}: number of aftershocks of the earthquakes
 % out{3}: number of foreshocks
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%% work in progress %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% order by time
+method = 'NO';
+if strcmp(method, 'time')
+    
+    x=lat;
+    y=lon;
+    z=depth;
+    
+    wgs84       = wgs84Ellipsoid('kilometer');
+    [x,y,z]     = geodetic2ecef(wgs84,x,y,-z);
+    
+    mag=M; tsort=t;
+    
+    % sort earthquakes with respect to size (these variable will get
+    % trimmed as the while loop progresses)
+    [tsort,I]=sort(tsort,'ascend');
+    mag = mag(I);
+    x   = x(I);
+    y   = y(I);
+    z   = z(I);
+    
+    [numberOfAftershocks, ...
+        mainshockID, ...
+        foreshockID, ...
+        mainshockIDofForeshock, ...
+        aftershocksAfterForeshock, ...
+        timeB4mainshock] = ...
+        deal(zeros(size(t))); % will need to be trimmed
+    
+    % more basic for now
+    Dt              = userInput.Results.TimeSelectionWindow; % time window in days
+    DScaling        = userInput.Results.SelectionRadius;     % factor of source dimension
+    
+    neq = length(x);
+    ID  = 1:neq;
+    newIDlist = ID; % being explict here for clarity in the while loop
+    
+    % foreshock and aftershock counters
+    fsn = 1; 
+    msn = 1;
+    while any(tsort) % are left
+        
+        % consider the first (earliest) remaining earthquake
+        m0  = mag(1);
+        t0  = tsort(1);
+        x0  = x(1);
+        y0  = y(1);
+        z0  = z(1);
+        MSI = newIDlist(1);
+        
+        % start a sequence
+        sequence = 1;
+        while sequence
+            % consider first earthquake and earthquakes withing R/T
+            Dsquared    = (x-x0).^2+(y-y0).^2+(z-z0).^2;
+            
+            % get magnitude dependent window
+            sourceDim   = 2*10^(0.59*m0)/10^3; % wells and coppesmith 1994 (M6 ~ 7km, M9 ~ 400km)
+            %sourceDim  = 10.^(-1.8362+0.4951*m0);
+            DistCutoff  = DScaling*sourceDim;
+            
+            % check eqs withing window 
+            % (k is important: it is the location of prelim aftershocks in
+            % the remaining eartquake catalog
+            k  = find(Dsquared < DistCutoff^2 & tsort>t0 & tsort<t0+Dt);
+            
+            %check whether any of the nearby eq are within DT
+            ASID   = newIDlist(k); % "address" of aftershocks being considered
+            
+            magCheck = mag(k) > m0;
+            if any(magCheck)
+                % mark that the earthquake was an foreshock
+                foreshockID(fsn) = MSI; % downgrade to foreshock
+                
+                % assign new MS
+                loc     = find(magCheck,1);
+                MSI     = ASID(loc);
+                
+                % record the aftershocks of the foreshock
+                aftershocksAfterForeshock(fsn) = loc - 1;
+                
+                % record its time till mainshock
+                timeB4mainshock(fsn) = t(loc) - t0;
+                
+                % set the new MS
+                m0  = mag(k(loc));
+                t0  = tsort(k(loc));
+                x0  = x(k(loc));
+                y0  = y(k(loc));
+                z0  = z(k(loc));
+                
+                % point to the mainshock of the foreshock
+                mainshockIDofForeshock(fsn) = MSI; 
+                
+                % remove foreshocks
+                [tsort,x,y,z,mag,newIDlist] = goodind(setdiff(1:length(tsort),k(1:loc-1)), ...
+                    tsort,x,y,z,mag,newIDlist);
+                
+                % ISSUE: note that there is an (unlikely) blindspot for
+                % earrthquakes within the foreshock window and not the
+                % mainshock
+                
+                % step the foreshock counter
+                fsn = fsn + 1;
+                
+            else % record the number of aftershocks and end sequence
+                % record MS ID
+                mainshockID(msn) = MSI;
+                
+                % count aftershocks
+                if any(k)
+                    numberOfAftershocks(msn) = length(k);
+                else
+                    numberOfAftershocks(msn) = 0;
+                end
+                % reset sequence
+                msn = msn + 1;
+                sequence = 0;    
+            end
+            
+            % awkward way of finding mainshock's index 
+            k0 = find(tsort == t0);
+            
+            % trim catalog (and IDs)
+            [tsort,x,y,z,mag,newIDlist] = goodind(setdiff(1:length(tsort),[k0,k]), ... 
+                    tsort,x,y,z,mag,newIDlist);
+        end
+    end
+    % trim vetors
+    [numberOfAftershocks, mainshockID] = goodind(1:msn-1, numberOfAftershocks, mainshockID);
+    [foreshockID, ...
+        mainshockIDofForeshock, ...
+        aftershocksAfterForeshock, ...
+        timeB4mainshock] = goodind(1:fsn-1, foreshockID, ...
+        mainshockIDofForeshock, ...
+        aftershocksAfterForeshock, ...
+        timeB4mainshock);
+    
+    % ISSUE: mini post process: remove first DT of the aftershock catalog in case
+    % the first earthquakes of the catalog are aftershocks of unseen
+    % previous earthquakes
+    
+    figure; hold on;
+    scatter(M(foreshockID), aftershocksAfterForeshock,'r','filled','MarkerFaceAlpha',0.5); set(gca,'Yscale','log')
+    scatter(M(mainshockID),numberOfAftershocks,'filled','MarkerFaceAlpha',0.5); set(gca,'Yscale','log')
+    
+    figure; scatter(M(foreshockID), timeB4mainshock,'filled','MarkerFaceAlpha',0.5);
+    figure;histogram(timeB4mainshock)
+    
+    figure; scatter(M(mainshockIDofForeshock),aftershocksAfterForeshock,'filled','MarkerFaceAlpha',0.5);
+    set(gca,'Yscale','log'); title('productivity of foreshock as a funtion of maishock mag')
+end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+%     for n = 1:length(mag)
+%         t0  = tsort(n);
+%         x0  = x(n);
+%         y0  = y(n);
+%         z0  = z(n);
+%         Dsquared = (x-x0).^2+(y-y0).^2+(z-z0).^2;
+%         trel  = tsort-t0;
+%         IAS   = (trel > 0)  &   (trel<Dt)   ...
+%             & ...
+%             Dsquared < DistCutoff^2;
+%         nAS(n)          = sum(IAS);
+%         magComparison   = mag(n)<mag(IAS);
+%         isFS(n)         = any(magComparison);
+%         if isFS(n)
+%             MSI             = find(magComparison,1);
+%             nASb4MS(n)      = sum(tsort(IAS)< tsort(I));
+%             timeB4MS(n)     = t0-tsort(MSI);
+%         end
+%     end
+%     return
+% end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 x=lat;
 y=lon;
 z=depth;
 
 mag=M; tsort=t;
+
+if strcmp(userInput.Results.MinMainshockMag,'min')
+        minmag=min(mag); 
+else
+        minmag = userInput.Results.MinMainshockMag;
+end
+
+maxmag=max(mag);
+
+[flag, mainShockIndex, numberOfAftershock, numberOfForeshocks] = ...
+    deal(zeros(size(t)));
+
+iMainShock = 0;
+
+Dt              = userInput.Results.TimeSelectionWindow; % time window in days 
+DtFS            = userInput.Results.ForeshockTimeWindow;
+Dtbig           = userInput.Results.TimeWindow;          % this is the time search window (eq flagged);
+DmaxScaling     = userInput.Results.SearchRadius;        % factor of source dimension
+DScaling        = userInput.Results.SelectionRadius;     % factor of source dimension
 
 % sort earthquakes with respect to size
 [mag,I]=sort(mag,'descend');
@@ -515,39 +726,13 @@ wgs84       = wgs84Ellipsoid('kilometer');
 [x,y,z]     = geodetic2ecef(wgs84,x,y,-z);
 
 %%
-if strcmp(userInput.Results.MinMainshockMag,'min')
-        minmag=min(mag); 
-else
-        minmag = userInput.Results.MinMainshockMag;
-end
-
-maxmag=max(mag);
-
-flag                =zeros(size(tsort));
-ijk                 =0;
-
-mainShockIndex      = zeros(1,length(tsort));
-numberOfAftershock  = zeros(1,length(tsort));
-numberOfForeshocks  = zeros(1,length(tsort));
-iMainShock = 0;
-
-Dt              = userInput.Results.TimeSelectionWindow; % time window in days 
-DtFS            = userInput.Results.ForeshockTimeWindow;
-Dtbig           = userInput.Results.TimeWindow;          % this is the time search window (eq flagged);
-DmaxScaling     = userInput.Results.SearchRadius;        % factor of source dimension
-DScaling        = userInput.Results.SelectionRadius;     % factor of source dimension
 
 % iterate from largest magnitude down in a hiearchical way
 for mm=maxmag:-0.1:minmag
     
-    ijk        	= ijk+1;
     NumMain    	= 0;
     I1       	= find(abs(mag-mm)<0.05);
     Nparfor    	= length(I1);
-    
-%     mo          = (10^((mm+10.73)*1.5))*10^-7;
-%     stressDrop  = 10^5*10;
-%     sourceDim   = 2 * 0.001 * (mo*(7/16) / stressDrop) ^ (1/3) % in km tbl 9.1 modern global seismo lay
     sourceDim   = 2*10^(0.59*mm)/10^3; % wells and coppesmith 1994 (M6 ~ 7km, M9 ~ 400km)
     Dmaxbig     = DmaxScaling*sourceDim;
     DistCutoff  = DScaling*sourceDim;  
@@ -704,27 +889,27 @@ end
 
 end
 
-function [fMc] = calc_McMaxCurvature(mCatalog)
-  % Get maximum and minimum magnitudes of the catalog
-  fMaxMagnitude = max(mCatalog);
-  fMinMagnitude = min(mCatalog);
-  if fMinMagnitude > 0
-    fMinMagnitude = 0;
-  end
-  
-  % Number of magnitudes units
-  nNumberMagnitudes = (fMaxMagnitude*10) + 1;
-  
-  % Create a histogram over magnitudes
-  [vHist, vMagBins] = hist(mCatalog, fMinMagnitude:0.1:fMaxMagnitude);
-  
-  % Get the points with highest number of events -> maximum curvature  
-  fMc = vMagBins(max(find(vHist == max(vHist))));
-  if isempty(fMc)
-    fMc = nan;
-  end
-
-end
+% function [fMc] = calc_McMaxCurvature(mCatalog)
+%   % Get maximum and minimum magnitudes of the catalog
+%   fMaxMagnitude = max(mCatalog);
+%   fMinMagnitude = min(mCatalog);
+%   if fMinMagnitude > 0
+%     fMinMagnitude = 0;
+%   end
+%   
+%   % Number of magnitudes units
+%   nNumberMagnitudes = (fMaxMagnitude*10) + 1;
+%   
+%   % Create a histogram over magnitudes
+%   [vHist, vMagBins] = hist(mCatalog, fMinMagnitude:0.1:fMaxMagnitude);
+%   
+%   % Get the points with highest number of events -> maximum curvature  
+%   fMc = vMagBins(max(find(vHist == max(vHist))));
+%   if isempty(fMc)
+%     fMc = nan;
+%   end
+% 
+% end
 
 
 

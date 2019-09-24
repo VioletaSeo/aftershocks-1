@@ -32,5 +32,5 @@ SDformat = {'Time','Lat','Lon','Mw'};
 
 [C,~] = merge_eq_catalog(CAT, MSformat, ...
                          eqenergy, REformat);
-mergedCat = merge_eq_catalog(
+mergedCat = merge_eq_catalog()
 

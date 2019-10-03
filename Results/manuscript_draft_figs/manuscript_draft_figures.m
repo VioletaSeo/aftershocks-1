@@ -44,8 +44,7 @@ inputCell = {CAT.time, ...
             'ReturnCatalog', 'yes', ...
             'SaveCatalog', 'no', ...
             'PlotYN','no', ...
-            'Completeness', completeness,...
-            'TimeSelectionWindow',33/24};
+            'Completeness', completeness};
 
 % aftershock statistics
 [ASinfo,k,alpha] = aftershock_productivity_kernel(inputCell{:});
@@ -230,7 +229,7 @@ savefigure(gcf,'prod_vs_age',SAVEFIG)
 
 %% 8-9) Stem - covariance matrix
 X = [log10(areaNorm), log10(Wnorm),log10(Lnorm),log10(H),(A),V,log10(SD),Yng,P,log10(Enorm),log10(durNorm),FFIdip]; Y = FFIres;
-SourceParameters = {'Area^*','Width^*','Length^*','log(H)','Aspect','Rupt. Vel.','log(\Delta\sigma)','Young','Poisson','Energy^*', 'Duration^*','dip'};
+SourceParameters = {'Area^*','Width^*','Length^*','log(H)','Aspect','Rupt. Vel.','log(\Delta\sigma)','Young','Poisson','Energy^*', 'Duration^*','Dip'};
 %% 
 plot_r2_stems(X,Y,SourceParameters,colorAryFFI,SD,A,Wnorm)
 ftsz(gcf,8);
@@ -239,9 +238,9 @@ setsize(gcf,6.5,4);
 savefigure(gcf,'stem_plot',SAVEFIG)
 
 %% 
-plot_cov_matrix([X,FFIdepth,log10(FFIage),Y],[SourceParameters,{'Depth','Age','Res'}])
+plot_cov_matrix([X,FFIdepth,log10(FFIage),Y],[SourceParameters,{'Depth','Crust age','\Delta log(N)'}])
 ftsz(gcf,10);
-setsize(gcf,3.5,3);
+setsize(gcf,3.8,3.4);
 
 %%
 savefigure(gcf,'covariance_plot',SAVEFIG)
@@ -270,6 +269,7 @@ ftsz(gcf,8);
 savefigure(gcf,'response','yes')
 
 %% SUPPLEMENT:
+% scaling
 % prod vs depth?
 % sensitity to Mc
 % co-variance matrix
@@ -280,6 +280,13 @@ savefigure(gcf,'response','yes')
 %   ...
 
 SAVEFIG = 'no';
+
+
+%% scaling 
+plot_scaling_comparison(CAT.M,CAT.fms,ASinfo.ID,ASinfo.MSprod,inputCell)
+ftsz(gcf,10);
+setsize(gcf,5.8,3)
+savefigure(gcf,'scaling_comparison','yes')
 
 %% plate age by faulting mech.
 faultingStyle = {'Strike-slip','Normal','Reverse'};
@@ -330,6 +337,9 @@ plot_cov(FFIage,log10(areaNorm),FFIdip,FFIres,FFIfms,colorAryFFI,ftsz,setsize,@s
 function plot_productivity_law(M,prod,res,c)
 
 tpos = [-0.15,1];
+ptsz = 25;
+alpha= 0.15;
+
 figure
 
 % plot a)
@@ -338,7 +348,7 @@ t = title('a)'); set(t,'Position',tpos,'Units','normalized')
 hold on
 
 [magArray,prodArray,K,A] = productivity_law(M,prod);
-scatter(M,prod,40,c,'filled','MarkerFaceAlpha',0.2);
+scatter(M,prod,ptsz,c,'filled','MarkerFaceAlpha',alpha);
 set(gca,'Yscale','log');
 squareH = scatter(magArray,prodArray,'s','k');
 blankH  = scatter([],[],'k');
@@ -359,7 +369,7 @@ subplot(3,3,7:8)
 t = title('b)'); set(t,'Position',tpos,'Units','normalized')
 
 hold on
-scatter(M,res,40,c,'filled','MarkerFaceAlpha',0.2);
+scatter(M,res,ptsz,c,'filled','MarkerFaceAlpha',alpha);
 set(gca,'xlim', [min(M)-0.2,9.5])
 xlabel('M_w')
 ylabel({'Relative', 'productivity','\Delta log(N)'})
@@ -736,6 +746,8 @@ X = X(~isnan(mean(X,2)),:);
 C = abs(corrcoef(X));
 C = tril(C);
 C(C==0) = nan;
+C = [C;C(end,:)];
+SourceParameters = [SourceParameters,'(Target)'];
 figure;
 imagesc(C,'AlphaData',~isnan(C));
 set(gca,...
@@ -746,9 +758,14 @@ set(gca,...
 xtickangle(50)
 ch = colorbar;
 ch.Location = 'north';
-xlabel(ch,{'Correlation','Coefficient'})
-ch.Position = [0.55,0.8,0.3,0.06];
+xlabel(ch,{'Pearson Correlation Coef.','$|PCC| = |\frac{cov(p_i,p_j)}{\sigma_i\sigma_j}|$'},'Interpreter','latex')
+ch.Position = [0.52,0.82,0.3,0.06];
 colormap(cubehelix([],0.7,-0.7,1,1.8,[0.1,0.9],[0.1,0.95]))
+set(gca,'TickLength',[0 0])
+hold on
+rectangle('Position',[0.6,14.5,length(SourceParameters)-0.1-1,1.9],...
+    'EdgeColor','r',...
+     'LineWidth',1.5)
 
 end
 
@@ -949,7 +966,7 @@ end
 function plot_ML(predictors,res,lat,lon,depth,latAll,lonAll,depthAll,resAll)
 
 I = ~isinf(res);
-mm = minmax(res(I)');
+mm = minmax(res(I)')*1.5;
 
 % KNN prediction
 figure
@@ -1071,6 +1088,63 @@ savefigure(gcf,'plotmatrix',SAVEFIG)
 
 end
 
+function plot_scaling_comparison(M,fms,MSID,MSprod,INPUTCELL)
+% compare productivity measurements for difference scaling relationships
+% inputs:
+% MSID: id for productivity measurements
+
+
+alpha = 0.09;
+markerSize = 10;
+
+[ASinfo,~,~] = aftershock_productivity_kernel(INPUTCELL{:},'Scaling','B19');
+[I,i1,i2] = intersect(MSID,ASinfo.ID);
+
+prod1 = MSprod(i1);
+prod2 = ASinfo.MSprod(i2);
+M = M(I);
+
+[prod1,prod2,M] = goodind(fms(I) ~= 0, prod1,prod2,M);
+
+jit1 = 1; %+ (rand(length(prod1),1)-0.5)/2;
+jit2 = 1; %+ (rand(length(prod1),1)-0.5)/2;
+jit3 = 1; % + (rand(length(prod1),1)-0.5)/10;
+
+
+figure;
+subplot(1,2,1)
+scatter(prod1.*jit1,prod2.*jit2,markerSize,'filled','MarkerFaceAlpha',alpha)
+set(gca,'XScale','log','YScale','log')
+xlabel({'N_{WC94}', 'R_{source} \sim 10^{0.59M_W}'})
+ylabel({'N_{B19}', 'R_{source} \sim 10^{0.4951M_W}'})
+hold on
+Nrange = [1,max([prod1;prod2])];
+plot(Nrange,Nrange,'--k','linewidth',1.5)
+legend({'Mainshocks','1:1'},'Location','northwest','Box','off')
+
+subplot(1,2,2)
+prodR = log10(prod1./prod2);
+scatter(M,(prodR.*jit3),markerSize,'filled','MarkerFaceAlpha',alpha)
+
+% mm = (min(M):0.1:max(M))-0.05;
+% for n = 1:length(mm)
+%     p025(n) = prctile(prodR(M>mm(n) & M < mm(n)+0.1),25);
+%     p975(n) = prctile(prodR(M>mm(n) & M < mm(n)+0.1),75);
+% end
+%     
+% hold on
+% plot(mm,p025,'--k')
+% plot(mm,p975,'--k')
+xlabel('Mainshock Magnitude (M_W)')
+ylabel('log(N_{WC94}/N_{B19})')
+legend(sprintf('Mean abs. error: %0.1g',nanmean(abs(prodR(~isinf(prodR))))), ...
+    'Box','off', ...
+    'Location','southeast');
+% set(gca,'Yscale','log')
+disp(sprintf('%0.2g\5 agreement', sum(prod1==prod2)/length(prod1)))
+
+end
+
 %% other functions
 
 function RES = get_res(M,N)
@@ -1157,4 +1231,12 @@ function varargout = rem_row(I,varargin)
        arg(I,:) = [];
        varargout{n} = arg;
     end
+end
+
+function [varargout]    = goodind(goodInd,varargin)
+
+for n=1:length(varargin)
+    varargout{n} = varargin{n}(goodInd);  %#ok<AGROW>
+end
+
 end

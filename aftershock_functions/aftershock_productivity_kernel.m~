@@ -737,7 +737,7 @@ switch userInput.Results.Scaling
         scaling = @(MOMENT_MAGNITUDE) 2*10^(0.59*MOMENT_MAGNITUDE)/10^3; % wells and coppesmith 1994 table 2A (M6 ~ 7km, M9 ~ 400km)
     case 'B19' % Bergman et al. 2019 from geodetic inversions
         % NOTE THAT THIS IS SCALED TO WC94!!!!!!!!!!!!!!!!!!!
-        scaling = @(MOMENT_MAGNITUDE) (2*10^(7.0*(0.59-0.4951))/1000)*10.^(0.4951*MOMENT_MAGNITUDE);
+        scaling = @(MOMENT_MAGNITUDE) (2*10^(6.5*(0.59-0.4951)))/1000)*10.^(0.4951*MOMENT_MAGNITUDE);
 end
 
         

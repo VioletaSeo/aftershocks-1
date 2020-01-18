@@ -1,0 +1,3 @@
+lambda=10;
+k=[0:lambda*10];
+p=lambda.^k*exp(-lambda)./prod(k);

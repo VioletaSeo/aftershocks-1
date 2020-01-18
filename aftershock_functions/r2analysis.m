@@ -86,7 +86,7 @@ SNh = stem(R(~corrSign),2.5*sqrt(mit)*ones(length(R(~corrSign)), 1), ...
     'Color', [0, 0, 1, 0.1], ...
     'LineWidth',2);
 
-legend([h,SPh,SNh],{'Max by permution','Positive corr.','Negative corr.'},'Location','northeast')
+legend([h,SPh,SNh],{'Max by permution','Positive correlation','Negative correlation'},'Location','northeast')
 
 texth = text(R, 3*sqrt(mit)*ones(length(R),1), SourceParameters);
 set(texth, 'Rotation', 45)

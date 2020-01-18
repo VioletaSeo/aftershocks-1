@@ -8,7 +8,7 @@
 %% preamble:
 clear
 close all
-SAVEFIG = 'yes';
+SAVEFIG = 'no';
 p = mfilename('fullpath');
 [filepath,~,~] = fileparts(p);
 ftsz    = @(fh,fontSize) set(findall(fh,'-property','FontSize'),'FontSize',fontSize);
@@ -17,6 +17,7 @@ setsize = @(fh,dim1,dim2) set(fh,...
     'Position',     [0,0,dim1,dim2],...
     'PaperUnits',   'Inches',...
     'PaperSize',    [dim1,dim2]);
+rng(1)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -26,9 +27,9 @@ CAT     = iris_dmc_cat_with_fms_and_energy;
 
 % MAGIC NUMBERS                                                 Justification
 % -------------                                                 -----------
-minMag      = 6.3; % Minimum magnituce of mainshocks considered (Mc + 2)
+minMag      = 6.5; % Minimum magnituce of mainshocks considered (Mc + 2)
 maxDepth    = 55;  % Maximum mainshock depth considered         (No deep focus earthquakes)
-completeness= 4.5; % Completeness of the catalog                  (from KS test for Mid ocean rideges)
+completeness= 4.5; % Completeness of the catalog                (from KS test for Mid ocean rideges)
 distance2pb = 400; % Maximum distance to plate                  ~ maxDepth/tand(10) 
 startDate   = 1990;% start of the catalog                       big drop in MC around start of 1990s 
 
@@ -41,6 +42,8 @@ inputCell = {CAT.time, ...
             CAT.M, ...
             CAT.fms, ...
             'MinMainshockMag',minMag, ...
+            'TimeSelectionWindow',360, ...
+            'TimeWindow',360,...
             'ReturnCatalog', 'yes', ...
             'SaveCatalog', 'no', ...
             'PlotYN','no', ...
@@ -48,13 +51,24 @@ inputCell = {CAT.time, ...
 
 % aftershock statistics
 [ASinfo,k,alpha] = aftershock_productivity_kernel(inputCell{:});
-
-%%
 MSCat = CAT(ASinfo.ID,:);
 MSCat.MSres = ASinfo.MSres;
 MSCat.MSprod= ASinfo.MSprod;
 
-MSCat = MSCat(MSCat.fms ~= 0,:); % should I do this??????????????????????????
+%% Proceed with CARE
+validating = false;
+if validating == false
+    zCat = readtable('zaliapin_test_cat_Nas_MS_Mc_4.5.txt');
+    zCat.Properties.VariableNames = {'MAG','N_AS','N_FS','MS_ID'};
+    MSCat = iris_dmc_cat_with_fms_and_energy(zCat.MS_ID,:);
+    MSCat.MSres = get_res(zCat.MAG,zCat.N_AS);
+    MSCat.MSprod= zCat.N_AS;
+    MSCat = MSCat(MSCat.M>minMag,:);
+end
+
+%%
+
+MSCat = MSCat(MSCat.fms ~= 0,:); % remove strange (large) earthquakes with no focal mechanism
 
 wholeCat    = MSCat;
 wholeCat.age= get_crust_age(wholeCat.lat, wholeCat.lon, wholeCat.depth);
@@ -72,7 +86,7 @@ t       = MSCat.time;
 
 % aftershock stats
 prod    = MSCat.MSprod;
-res     = get_res(M,prod);
+[res,subK,subAlpha]     = get_res(M,prod);
 
 % source properties
 fms     = MSCat.fms;
@@ -83,6 +97,14 @@ dur     = MSCat.RuptureDuration;
 durNormall = dur./(mw2mo(M)).^(1/3);
 RT      = MSCat.RuptureDuration;
 
+
+% plotting colors (be focal mechanism)
+colors = {[0.7      0.7       0.7], ...
+          [0        0.4470    0.7410],...
+          [0.4660   0.6740    0.1880], ...pred(I,:)
+          [0.6350   0.0780    0.1840]}; % colors
+cAry = assign_color(fms+1,colors);
+%% 
 % assign ages
 age = get_crust_age(MSCat.lat, MSCat.lon, 0);
 rate= get_crust_rate(MSCat.lat, MSCat.lon, 0);
@@ -90,14 +112,6 @@ rate= get_crust_rate(MSCat.lat, MSCat.lon, 0);
 % plate boundaries
 %                           see above   (enforce fms)                             
 PB = assign_PB_class(lat,lon, distance2pb,'yes',fms);
-
-
-% plotting colors (be focal mechanism)
-colors = {[0.7      0.7       0.7], ...
-          [0        0.4470    0.7410],...
-          [0.4660   0.6740    0.1880], ...
-          [0.6350   0.0780    0.1840]}; % colors
-cAry = assign_color(fms+1,colors);
 %%
 
 load('FSPcat_manuscript_draft.mat')
@@ -117,7 +131,8 @@ c = c(~(c.res_appended_cat1 == max(c.res_appended_cat1)),:); % remove tuhoku for
 Mo       = c.Mo;
 Wnorm    = c.Width.*Mo.^(-1/3);
 Lnorm    = c.Length.*Mo.^(-1/3);
-areaNorm = c.Length.*c.Width./(10.^(0.59*c.Mw));
+% areaNorm = c.Length.*c.Width./(10.^(2*0.59*c.Mw));
+areaNorm = c.Length.*c.Width./(10.^(0.91*c.Mw)); % as per wells and coppersmith, 1994, table 2a (SA)
 logAnorm = log10(areaNorm);
 A        = c.AspectRatio;
 A(A<1)   = 1./A(A<1);
@@ -184,8 +199,8 @@ cM.DateTime = datetime(cM.t,'ConvertFrom','datenum');
 %% 1) productivity law 
 plot_productivity_law(M,prod,res,cAry)
 ftsz(gcf,8)
-setsize(gcf,4.5,3.5)
-savefigure(gcf,'prod_law_mw5',SAVEFIG)
+setsize(gcf,5,4)
+savefigure(gcf,'prod_law',SAVEFIG)
 
 %% 2) Space-time sensitivity
 plot_ST_sensitiviety([inputCell,{'DepthRange',[0,maxDepth]}], CAT, 100)
@@ -212,7 +227,7 @@ savefigure(gcf,'prod_vs_depth',SAVEFIG)
 plot_regions(lat,lon,res)
 ftsz(gcf,8)
 setsize(gcf,6.6,2.5)
-savefigure(gcf,'regions',SAVEFIG)
+savefigure(gcf,'regions_z',SAVEFIG)
 
 %% 6) Productivity by plate boundary
 plot_prod_by_pb(PB,res)
@@ -229,9 +244,9 @@ savefigure(gcf,'prod_vs_age',SAVEFIG)
 
 %% 8-9) Stem - covariance matrix
 X = [log10(areaNorm), log10(Wnorm),log10(Lnorm),log10(H),(A),V,log10(SD),Yng,P,log10(Enorm),log10(durNorm),FFIdip]; Y = FFIres;
-SourceParameters = {'Area^*','Width^*','Length^*','log(H)','Aspect','Rupt. Vel.','log(\Delta\sigma)','Young','Poisson','Energy^*', 'Duration^*','Dip'};
+SourceParameters = {'Area^*','Width^*','Length^*','log(H)','Aspect Ratio','Rupt. Vel.','log(\Delta\sigma)','Young','Poisson','Energy^*', 'Duration^*','Dip'};
 %% 
-plot_r2_stems(X,Y,SourceParameters,colorAryFFI,SD,A,Wnorm)
+plot_r2_stems(X,Y,SourceParameters,colorAryFFI,SD,A,Wnorm,c.Mw)
 ftsz(gcf,8);
 setsize(gcf,6.5,4);
 %%
@@ -241,8 +256,6 @@ savefigure(gcf,'stem_plot',SAVEFIG)
 plot_cov_matrix([X,FFIdepth,log10(FFIage),Y],[SourceParameters,{'Depth','Crust age','\Delta log(N)'}])
 ftsz(gcf,10);
 setsize(gcf,3.8,3.4);
-
-%%
 savefigure(gcf,'covariance_plot',SAVEFIG)
 
 %% 10) FMS dependence
@@ -260,7 +273,7 @@ setsize(gcf,5,4.5);
 savefigure(gcf,'cal_tech',SAVEFIG)
 
 %% 12) kn vs SVM
-I = ~isnan(FFIage);
+I = ~isnan(FFIage) & ~isinf(FFIres);
 pred = [(FFIage),(FFIdip),log10(areaNorm)];
 plot_ML(pred(I,:),FFIres(I),c.Lat(I),c.Lon(I),c.Depth(I), ...
     lat,lon,depth,res)
@@ -272,14 +285,15 @@ savefigure(gcf,'response','yes')
 % scaling
 % prod vs depth?
 % sensitity to Mc
-% co-variance matrix
+% Mag sensitivity caltech plot
+
 % each parameter as a function of N*
 %   rate
 %   energy
 %   time
 %   ...
 
-SAVEFIG = 'no';
+SAVEFIG = 'yes';
 
 
 %% scaling 
@@ -298,10 +312,28 @@ setsize(gcf,5,3);
 savefigure(gcf,['prod_vs_age_',faultingStyle{n}],SAVEFIG)
 end
 
+
+%% caltech mag sensitivity
+
+mCut = 7.54;
+
+plot_caltec_mag_sens(mCut,'higher',wholeCat.M,c.Mw,cM.M, ...
+    wholeCat.depth,wholeCat.age,wholeCat.fms,wholeCat.pb,wholeCat.MSres, A, Wnorm, SD, FFIres, cM.res_appended_cat1)
+xlim([-1.5,1.5])
+ftsz(gcf,10);
+setsize(gcf,5,4.5);
+savefigure(gcf,'cal_tech_7plus',SAVEFIG)
+
+plot_caltec_mag_sens(mCut,'lower',wholeCat.M,c.Mw,cM.M, ...
+    wholeCat.depth,wholeCat.age,wholeCat.fms,wholeCat.pb,wholeCat.MSres, A, Wnorm, SD, FFIres, cM.res_appended_cat1)
+xlim([-1.5,1.5])
+ftsz(gcf,10);
+setsize(gcf,5,4.5);
+savefigure(gcf,'cal_tech_lt7',SAVEFIG)
+
+
 %% completeness (run seperately with Mc = 5)
 % will be done manually
-
-%% covariance matrix
 
 %% N* as a function each parameter
 it(-1); % it is an iterator that adavances everytime it is called ;)
@@ -331,6 +363,11 @@ savefigure(gcf,'misc',SAVEFIG)
 %% covariance
 plot_cov(FFIage,log10(areaNorm),FFIdip,FFIres,FFIfms,colorAryFFI,ftsz,setsize,@savefigure, SAVEFIG)
 
+%% validation (NOT AUTOMATED - PROCEED WITH CARE)
+method_validation(ASinfo,iris_dmc_cat_with_fms_and_energy) % MAKE SURE THAT THE COMPLETENESS OF MSCAT IS THE SAME AS THE ZALIAPIN CODE!!!!!!!!!!!!!!!!!
+ftsz(gcf,10);
+setsize(gcf,4,3.5);
+savefigure(gcf,'method_validation',SAVEFIG)
 %% PLOTTING FUNCTIONS:
 
 %%plots:
@@ -340,27 +377,66 @@ tpos = [-0.15,1];
 ptsz = 25;
 alpha= 0.15;
 
-figure
+fh = figure;
+left_color = [0 0 0];
+right_color = [0 0 0];
+
+set(fh,'defaultAxesColorOrder',[left_color; right_color]);
 
 % plot a)
-subplot(3,3,[1:2,4:5])
+subplot(3,3,[1:2,4:5]);
 t = title('a)'); set(t,'Position',tpos,'Units','normalized')
 hold on
 
+
 [magArray,prodArray,K,A] = productivity_law(M,prod);
+Nhat = K*10.^(A*magArray);
+
+yyaxis left
+set(gca,'defaultAxesColorOrder',[left_color; right_color]);
 scatter(M,prod,ptsz,c,'filled','MarkerFaceAlpha',alpha);
 set(gca,'Yscale','log');
 squareH = scatter(magArray,prodArray,'s','k');
 blankH  = scatter([],[],'k');
-lineH   = plot(magArray,K*10.^(A*magArray),'--k','LineWidth',2);
+lineH   = plot(magArray,Nhat,'--k','LineWidth',2);
 ylabel('Number of Aftershocks, N')
 set(gca,'xlim', [min(M)-0.2,9.5],'XTickLabel',[])
+ylim([0.25,max(prod)]);
+yticks([1,10,100,1000])
 
 kexp = log10(K);
-lg = legend([blankH,squareH,lineH],{'Mainshock','Median',sprintf('10^{%0.1f M %0.1f}',A,kexp)}, ...
-    'Location','southeast');
 
-newPosition = [0.48 0.42 0.1 0.1];
+plot(magArray, poissinv(0.025,Nhat),'--k');
+confLineH = plot(magArray, poissinv(0.975,Nhat),'--k');
+
+
+
+yyaxis right 
+I = prod == 0; 
+edges = magArray-diff(magArray(1:2))/2;
+[Nno,~] = histcounts(M(I),edges);
+[Ntot,~] = histcounts(M,edges);
+frac = Nno./(Ntot);
+Inan = isnan(frac);
+frac(Inan) = 0;
+frac = frac*100;
+hh = histogram('BinEdges',edges,'BinCounts',frac, ...
+    'EdgeColor','none',...
+    'FaceColor','k',...
+    'FaceAlpha',0.5);
+ylabel({'% of mainshocks with','no aftershocks'})
+ylim([0,200]);
+yticks([0 50 100])
+
+lg = legend([blankH,squareH,lineH, confLineH, hh],{'Mainshock',...
+                                    'Median',...
+                                    sprintf('10^{%0.2f M %0.2f}',A,kexp),...
+                                    '95% Poisson conf.',...
+                                    'No aftershocks'}, ...
+    'Location','southeast', ...
+    'Box','off');
+
+newPosition = [0.425 0.48 0.1 0.1];
 newUnits = 'normalized';
 set(lg,'Position', newPosition,'Units', newUnits);
 
@@ -370,6 +446,12 @@ t = title('b)'); set(t,'Position',tpos,'Units','normalized')
 
 hold on
 scatter(M,res,ptsz,c,'filled','MarkerFaceAlpha',alpha);
+scatter(magArray,log10(prodArray./(K*10.^(A*magArray))),'s','k')
+
+plot(magArray, log10(poissinv(0.025,Nhat)./Nhat),'--k');
+plot(magArray, log10(poissinv(0.975,Nhat)./Nhat),'--k');
+
+
 set(gca,'xlim', [min(M)-0.2,9.5])
 xlabel('M_w')
 ylabel({'Relative', 'productivity','\Delta log(N)'})
@@ -377,10 +459,11 @@ ylabel({'Relative', 'productivity','\Delta log(N)'})
 % plot c)
 subplot(3,3,9); hold on
 t = title('c)'); set(t,'Position',tpos,'Units','normalized')
-histogram(res,30,'FaceColor',[0.5 0.5 0.5],'EdgeColor','none')
+histogram(res,25,'FaceColor',[0.5 0.5 0.5],'EdgeColor','none')
 view(90, -90)
-set(gca,'XTickLabel',[])
+set(gca,'Xlim',[-2,2])
 ylabel('Number of Mainshocks')
+xlabel('\Delta log(N)')
 end
 
 function plot_ST_sensitiviety(inputCell, CAT, Nit)
@@ -414,8 +497,13 @@ for n = 1:nT
         ASinfoSENS = ASinfoSENS(~badDATA,:); 
         scatter(SENScat.M,ASinfoSENS.MSprod,10,'Filled','MarkerFaceAlpha',0.1); hold on
         [magArray,prodArray,kSENS,alphaSENS] = productivity_law(SENScat.M,ASinfoSENS.MSprod);
-        scatter(magArray,prodArray,'s','Filled','MarkerFaceColor',[0    0.4470    0.7410], 'MarkerFaceAlpha',0.5)
-        p1 = plot(SENScat.M,kSENS*10.^(alphaSENS*SENScat.M),'Color',  [0    0.4470    0.7410], 'LineWidth',2);
+        
+        scatter(magArray,prodArray,'s','Filled', ...
+            'MarkerFaceColor',      [0    0.4470    0.7410], ...
+            'MarkerFaceAlpha',      0.5)
+        p1 = plot(SENScat.M,kSENS*10.^(alphaSENS*SENScat.M),...
+            'Color',                [0    0.4470    0.7410], ...
+            'LineWidth',            2);
         
         text(8.6,1.5,sprintf('N_{x}:%g',sum(ASinfoSENS.MSprod==0)),'Color','r')
         
@@ -428,19 +516,18 @@ for n = 1:nT
         for nSFL = 1: Nit %for (nSFL = 1: Nit, parforArg)
             [ASinfoSENS,~,~] = aftershock_productivity_kernel( inputCell{:},timeWin{:},'ShuffleYN','yes');
             SENScat = CAT(ASinfoSENS.ID,:);
-            % scatter(SENScat.M,ASinfoSENS.MSprod,10,'Filled','MarkerFaceAlpha',0.05,'MarkerFaceColor',[.4 .4 .4]);
             [~,SFLprod(nSFL,:),SFLk(nSFL),SFLalpha(nSFL)] = productivity_law(SENScat.M,ASinfoSENS.MSprod);
         end
-        prodArray = median(SFLprod);
-        k = median(SFLk);
+        prodArray   = median(SFLprod);
+        k           = median(SFLk);
         a = median(SFLalpha);
         
         scatter(magArray,prodArray,'sk','MarkerEdgeAlpha',0.5)
         p2 = plot(SENScat.M,k*10.^(a*SENScat.M),'k','LineWidth',2);
         
         % legends
-        leg = legend([p1,p2],{sprintf('N=10^{%0.1f M %0.1f}',alphaSENS, log10(kSENS)), ...
-                sprintf('N_{SFL}=10^{%0.1f M %0.1f}',a, log10(k))}, ...
+        leg = legend([p1,p2],{sprintf('N=10^{%0.2f M %0.2f}',alphaSENS, log10(kSENS)), ...
+                sprintf('N_{SFL}=10^{%0.2f M %0.2f}',a, log10(k))}, ...
                 'Location','northwest','Box','off');
         
         leg.ItemTokenSize = [15,18];
@@ -700,7 +787,9 @@ grid on
 
 end
 
-function plot_r2_stems(X,res,SourceParameters,colorAry, SD,A,Wnorm)
+function plot_r2_stems(X,res,SourceParameters,colorAry, SD,A,Wnorm,M)
+
+sz = (M-5.5).^4.5;
 
 figure
 subplot(2,3,1:3);
@@ -710,7 +799,7 @@ t = title('a)');
 set(t,'Units','normalized','Position',[-0.04,0.9])
 
 subplot(2,3,4)
-scatter(SD,res,[],colorAry,'filled','MarkerFaceAlpha',0.4)
+scatter(SD,res,sz,colorAry,'filled','MarkerFaceAlpha',0.4)
 set(gca,'XScale','log')
 xlabel('Stress Drop, \Delta \sigma_E [MPa]')
 ylabel({'Relative Productivity','\Delta log(N)'})
@@ -719,7 +808,7 @@ t = title('b)');
 set(t,'Units','normalized','Position',[-0.12,0.98])
 
 subplot(2,3,5)
-scatter(Wnorm,res,[],colorAry,'filled','MarkerFaceAlpha',0.4)
+scatter(Wnorm,res,sz,colorAry,'filled','MarkerFaceAlpha',0.4)
 set(gca,'XScale','log')
 set(gca,'Yticklabel','')
 xlabel('Normalized width, W*')
@@ -728,12 +817,12 @@ set(t,'Units','normalized','Position',[-0.12,0.98])
 
 subplot(2,3,6);
 
-scatter(A,res,[],colorAry,'filled','MarkerFaceAlpha',0.4)
+scatter(A,res,sz,colorAry,'filled','MarkerFaceAlpha',0.4)
 xlabel('Aspect Ratio')
 set(gca,'Yticklabel','')
 t = title('d)'); 
 set(t,'Units','normalized','Position',[-0.12,0.98])
-
+%set(gca,'XScale','log')
 
 end
 
@@ -873,7 +962,7 @@ PBnames= flip({'Intraplate', ...
     'Continental rift',...
     'Convergent (continental)'});
 
-rowNames = {'Shallow (<55km)', ...
+rowNames = [{'Shallow (<55km)', ...
     'Intermediate (55-300km)', ...
     'Deep (>300km)', ...
     'Strike-slip', ...
@@ -887,8 +976,8 @@ rowNames = {'Shallow (<55km)', ...
     'Low stress drop',...
     'High normalized width',...
     'Low normalized width',...
-    'Multi-segment rupture',...
-    PBnames{:}};
+    'Multi-segment rupture'},...
+    PBnames{:}];
 
 I55 = depth < 55;
 depthShallow        = res(depth < 55);
@@ -920,7 +1009,7 @@ end
 featureArray = {depthShallow,depthIntermediate,depthDeep,SS,NF,RF,ageYougn, ...
     ageOld, highAspect, lowAspect, highSD, lowSD, highWnorm, lowWnorm, multRes, PBres{:}};
 Nfeat = length(featureArray);
-[errUp,errDown,meds,neq] = deal(zeros(Nfeat,1));
+[errUp,errDown,meds,neq,h,p] = deal(zeros(Nfeat,1));
 
 for n = 1:Nfeat
     err = prctile(featureArray{n},[25,75]);
@@ -928,9 +1017,15 @@ for n = 1:Nfeat
     errDown(n)  = err(2);
     meds(n) = median(featureArray{n});
     neq(n)  = length(featureArray{n});
+    try
+        [h(n),p(n)] = kstest2(featureArray{n},res);
+    catch 
+        h(n) = 0;
+        p(n) = 1;
+    end
 end
 
-T = table(rowNames',featureArray',meds,errUp,errDown,neq,'VariableNames',{'Subset','Data','Median','ErrDown', 'ErrUp','N_eq'});
+T = table(rowNames',featureArray',meds,errUp,errDown,neq,h,p,'VariableNames',{'Subset','Data','Median','ErrDown', 'ErrUp','N_eq','hypothesis','pval'});
 T = sortrows(T,'Median');
 T = T(T.N_eq>3,:);
 
@@ -939,7 +1034,6 @@ sz = 50;
 for n = 1:height(T) 
     ires            = T.Data{n};
     scatter(ires,        n*ones(size(ires)),  sz*2,'filled','MarkerFaceColor',[0.5,0.5,0.5], 'MarkerFaceAlpha',0.1)
-    scatter(median(ires),n,                   sz,  'filled','MarkerFaceColor', 'k')
     
     errBar = [prctile(ires,25),prctile(ires,75)];
     if isinf(errBar(1))
@@ -951,7 +1045,8 @@ for n = 1:height(T)
     else
         plot(errBar,[n,n],'LineWidth',2,'Color', 'k')
     end
-     
+    
+    scatter(median(ires),n,sz,  'filled','MarkerFaceColor',[(T.pval(n)<0.05)/1.5,0,0])    
 end
 set(gca,'YTick',1:n,'YTickLabel',T.Subset,'YLim',[0.1,n + 0.1])
 ytickangle(60)
@@ -974,7 +1069,7 @@ subplot(1,2,1)
 wgs84   = wgs84Ellipsoid('kilometer');
 loc     = geodetic2ecef(wgs84,latAll, lonAll, -depthAll);
 qloc    = geodetic2ecef(wgs84,lat,lon,-depth); 
-resPknn = knn_regress(loc,resAll,qloc,10);
+resPknn = knn_regress(loc,resAll,qloc,50);
 hold on; 
 pH = plot(mm,mm,'--','LineWidth',2,'Color','k');
 scatter(res,resPknn,[],'filled','MarkerFaceColor',[0.5 0.5 0.5], 'MarkerFaceAlpha',0.5);
@@ -997,7 +1092,7 @@ res = res(I);
 hold on; 
 pH = plot(mm,mm,'--','LineWidth',2,'Color','k');
 scatter(res,resP,[],'filled','MarkerFaceColor',[0.5 0.5 0.5], 'MarkerFaceAlpha',0.5);
-legend(pH,{sprintf('1:1, RMSE: %0.2g',R)},'Location','southeast','Box','off')
+legend(pH,{sprintf('1:1, RMSE: %0.2f',R)},'Location','southeast','Box','off')
 xlim(mm)
 ylim(mm)
 
@@ -1145,9 +1240,53 @@ disp(sprintf('%0.2g\5 agreement', sum(prod1==prod2)/length(prod1)))
 
 end
 
+function plot_caltec_mag_sens(MAGCUTOFF,higher_or_lower,magWC,magSD,magCR, ...
+    depth,age,fms,PB,res, A, Wnorm, SD, FFIres,multRes)
+
+if strcmp(higher_or_lower,'higher')
+    getI = @(mc,m) m>mc;
+elseif strcmp(higher_or_lower,'lower')
+    getI = @(mc,m) m<mc;
+else
+    error('higher_or_lower must be one of: ''higher'' or ''lower''');
+end
+
+[depth,age,fms,PB,res] = goodind(getI(MAGCUTOFF,magWC), depth,age,fms,PB,res);
+[A, Wnorm, SD, FFIres] = goodind(getI(MAGCUTOFF,magSD),A, Wnorm, SD, FFIres);
+multRes                = goodind(getI(MAGCUTOFF,magCR),multRes);
+caltech_plot(depth,age,fms,PB,res, A, Wnorm, SD, FFIres,multRes)
+title(sprintf('Mainshocks with magnitude %s than %0.2g',higher_or_lower,MAGCUTOFF))
+
+end 
+
+function method_validation(ASinfo, CAT)
+% pitfalls:
+% matched IDs
+% matched Mc
+MSCat = CAT(ASinfo.ID,:);
+ASinfo = ASinfo(MSCat.fms ~=0,:); % remove odd events that don't have a focal mechanism
+
+zCat = readtable('zaliapin_test_cat_Nas_MS_Mc_4.5.txt');
+zCat.Properties.VariableNames = {'MAG','N_AS','N_FS','MS_ID'};
+[~,ia,ib] = intersect(ASinfo.ID,  zCat.MS_ID);
+
+figure; hold on;
+scatter(ASinfo.MSprod(ia),zCat.N_AS(ib),10,zCat.MAG(ib),'filled','MarkerFaceAlpha',0.5)
+ch = colorbar;
+plot([1,max(ASinfo.MSprod(ia))],[1,max(ASinfo.MSprod(ia))])
+set(gca,'XScale','log','YScale','log')
+xlabel('N_{AS} Windowing')
+ylabel('N_{AS} Zaliapin et al., 2008')
+
+xlabel(ch,'M_W')
+ch.Location = 'south';
+ch.Position = [0.7 0.3 0.15 0.05];
+end
+
+
 %% other functions
 
-function RES = get_res(M,N)
+function [RES,K,A] = get_res(M,N)
     [~,~,K,A]   = productivity_law(M,N);
     allAS    	= @(x,y) log10(y) - log10(K*10.^(A*x));
     RES         = allAS(M,N);
@@ -1190,7 +1329,7 @@ end
 
 function savefigure(fh,figureName,plotYN)
 if strcmp(plotYN,'yes')
-saveas(fh,[figureName]);
+saveas(fh,figureName);
 print(fh,[figureName,'.png'],'-dpng','-r300');
 end
 end

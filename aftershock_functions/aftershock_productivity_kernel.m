@@ -183,7 +183,6 @@ addParameter(p,'SelectionRadius',  	defaultSelectionRadius,     numericValidatio
 addParameter(p,'MinMainshockMag',  	defaultMinMainshockMag,     numericValidationFcn);
 addParameter(p,'Scaling',           defaultScaling,             @(x) stringValidationFcn(x,expectedScaling));
 
-
 addParameter(p,'PlotYN',            defaultPlotYN,          @(x) stringValidationFcn(x,expectedYN));
 addParameter(p,'NewPlotYN',       	defaultNewPlotYN,       @(x) stringValidationFcn(x,expectedYN));
 addParameter(p,'ShowHistogram',     defaultShowHistogramYN,	@(x) stringValidationFcn(x,expectedYN));
